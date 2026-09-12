@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 湯田代表のUIDのみ読み書き可能、一般ユーザーは全遮断
+    function isOwner() {
+      return request.auth != null && request.auth.uid == "YUDA_ADMIN_UID_HERE";
+    }
+    match /{document=**} {
+      allow read, write: if isOwner();
+    }
+  }
+}

@@ -1,0 +1,949 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>株式会社ゆだや - バーチャル店舗統合管理ルーム</title>
+  <!-- Google Fonts: どうぶつの森風の温かみのある丸文字 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            round: ['"M PLUS Rounded 1c"', 'sans-serif'],
+          },
+          colors: {
+            yudaya: { blue: '#0066b2', green: '#2e7d32', gold: '#d4af37', dark: '#1e293b' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      background-color: #f6f1e5;
+      background-image: radial-gradient(#e5dbc5 1.5px, transparent 1.5px);
+      background-size: 20px 20px;
+    }
+    .room-floor {
+      background-color: #edd9b8;
+      background-image: repeating-linear-gradient(0deg, #e3cdab, #e3cdab 30px, #dcbe96 30px, #dcbe96 60px);
+      box-shadow: inset 0 0 40px rgba(115, 80, 40, 0.15);
+    }
+    .room-wall {
+      background: linear-gradient(180deg, #dcf0df 0%, #edf7ef 80%, #edd9b8 100%);
+      border-bottom: 8px solid #c9a77b;
+    }
+    .avatar-walk {
+      animation: avatar-waddle 0.35s infinite alternate ease-in-out;
+    }
+    @keyframes avatar-waddle {
+      0% { transform: translateY(0px) rotate(-5deg); }
+      100% { transform: translateY(-8px) rotate(5deg); }
+    }
+    .avatar-idle {
+      animation: avatar-breathe 2.4s infinite ease-in-out;
+    }
+    @keyframes avatar-breathe {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-3px) scale(1.02); }
+    }
+    .avatar-work {
+      animation: avatar-working 0.5s infinite alternate ease-in-out;
+    }
+    @keyframes avatar-working {
+      0% { transform: translateY(0px) rotate(-2deg); }
+      100% { transform: translateY(-4px) rotate(2deg); }
+    }
+    .pop-bubble {
+      animation: bubble-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes bubble-pop {
+      0% { transform: scale(0.3) translateY(10px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    @keyframes steam {
+      0% { transform: translateY(0) scaleX(1); opacity: 0.8; }
+      100% { transform: translateY(-16px) scaleX(1.4); opacity: 0; }
+    }
+    .steam-effect {
+      animation: steam 1.8s infinite ease-out;
+    }
+    .furniture-shadow {
+      filter: drop-shadow(0 8px 10px rgba(70, 50, 20, 0.18));
+    }
+    .pulse-border {
+      animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(225, 29, 72, 0.9); box-shadow: 0 0 10px rgba(225, 29, 72, 0.4); }
+      50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 2px rgba(225, 29, 72, 0.1); }
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- ================= TOP WOODEN SIGNBOARD HEADER ================= -->
+  <header class="bg-white/90 backdrop-blur-md border-b-4 border-amber-200 sticky top-0 z-40 px-4 py-2.5 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-600 border-2 border-emerald-700 text-white flex items-center justify-center font-black text-xl shadow-md transform -rotate-2">
+          ゆ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-black tracking-wide text-amber-950 flex items-center gap-2">
+              <span>株式会社ゆだや 店舗統合ルーム</span>
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                🏡 YUDAYA OS
+              </span>
+            </h1>
+          </div>
+          <p class="text-xs text-amber-800/80 font-medium">
+            <span class="font-black text-emerald-700">株式会社ゆだや</span> 自律AIオペレーション＆店舗DXハブ
+          </p>
+        </div>
+      </div>
+
+      <!-- Store Switcher Tabs -->
+      <div class="flex items-center bg-amber-100/70 p-1.5 rounded-2xl border-2 border-amber-200">
+        <button id="btnStore1" onclick="switchStore('hakata')" class="px-3 py-1.5 rounded-xl font-black text-xs transition bg-white text-emerald-800 shadow-sm border border-amber-200">
+          🏠 博多住吉通り店
+        </button>
+        <button id="btnStore2" onclick="switchStore('kiyokawa')" class="px-3 py-1.5 rounded-xl font-bold text-xs transition text-amber-800 hover:text-amber-950">
+          🏠 福岡清川二丁目店
+        </button>
+      </div>
+
+      <!-- Owner & Launcher -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="openLauncherModal()" class="px-4 py-2 bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-xs rounded-2xl border-2 border-amber-600 shadow-md transition transform active:scale-95 flex items-center gap-1.5">
+          <span>🧰</span>
+          <span>ゆだや開発アプリ棚</span>
+        </button>
+
+        <div class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-2xl border-2 border-amber-200 shadow-inner">
+          <div class="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center font-black text-xs border border-emerald-500">
+            代表
+          </div>
+          <div class="text-left leading-tight hidden sm:block">
+            <div class="text-xs font-black text-amber-950">湯田 恭平 代表</div>
+            <div class="text-[10px] text-emerald-700 font-bold">● 株式会社ゆだや 統括</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN GAME WORKSPACE ================= -->
+  <main class="flex-1 p-3 sm:p-5 max-w-7xl w-full mx-auto flex flex-col gap-5">
+
+    <!-- 1. どうぶつの森風の部屋マップ (Cozy Room Map) -->
+    <div class="bg-white rounded-3xl border-4 border-amber-200 shadow-xl overflow-hidden flex flex-col">
+      
+      <!-- Room Title & Status Header -->
+      <div class="px-4 py-2 bg-amber-50/80 border-b-2 border-amber-200 flex flex-wrap items-center justify-between text-xs">
+        <div class="flex items-center gap-2 font-bold text-amber-900">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="roomStoreTitle">博多住吉通り店：ゆだや自律作業ルーム</span>
+          <span class="text-[11px] bg-white px-2 py-0.5 rounded-full border border-amber-200 text-amber-700 font-normal">
+            福岡の気象: <strong class="text-emerald-700">晴れ 24℃ 🌤️</strong>
+          </span>
+        </div>
+        <div class="text-amber-800/80 text-[11px] font-medium">
+          下の命令ボタンを押すと担当エージェントがトコトコ走ります！
+        </div>
+      </div>
+
+      <!-- The 2D Room Viewport -->
+      <div id="roomViewport" class="relative w-full h-[430px] sm:h-[460px] room-floor overflow-hidden select-none">
+        
+        <!-- Room Back Wall & Windows -->
+        <div class="absolute top-0 left-0 right-0 h-24 room-wall flex justify-around items-center px-10 pointer-events-none">
+          <div class="w-16 h-14 bg-sky-200 rounded-t-full border-4 border-white shadow-inner flex flex-col justify-end p-1 overflow-hidden">
+            <div class="text-sm text-center animate-bounce">☁️</div>
+          </div>
+          <div class="w-11 h-11 bg-white rounded-full border-4 border-amber-300 shadow flex items-center justify-center font-black text-amber-900 text-[11px]">
+            <span id="roomWallClock">14:15</span>
+          </div>
+          <div class="w-16 h-14 bg-sky-200 rounded-t-full border-4 border-white shadow-inner flex flex-col justify-end p-1 overflow-hidden">
+            <div class="text-[10px] text-center font-bold text-sky-800">福岡空</div>
+          </div>
+        </div>
+
+        <!-- 4 FURNITURE STATIONS (家具・配置場所) -->
+        
+        <!-- Station 1: 左上【事務所・PCデスク】 -->
+        <div id="station-office" class="absolute top-26 left-6 sm:left-12 flex flex-col items-center furniture-shadow cursor-pointer" onclick="clickStation('office')">
+          <div class="bg-amber-100/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
+            💻 ゆだや本部デスク＆金庫
+          </div>
+          <div class="flex items-end gap-1.5">
+            <div class="w-24 h-16 bg-amber-700 rounded-xl border-2 border-amber-900 shadow-md p-1.5 flex flex-col justify-between">
+              <div class="w-12 h-8 bg-slate-800 rounded border-2 border-slate-700 mx-auto flex items-center justify-center text-[10px] text-emerald-400 font-mono font-bold animate-pulse">
+                YUDAYA
+              </div>
+              <div class="h-1.5 bg-amber-900/60 rounded"></div>
+            </div>
+            <div class="w-14 h-16 bg-slate-700 rounded-xl border-2 border-slate-900 shadow-md p-1 flex flex-col items-center justify-between">
+              <div class="w-6 h-6 rounded-full border-2 border-amber-400 bg-slate-800 flex items-center justify-center text-[8px] text-amber-400 font-bold">
+                🔒
+              </div>
+              <span class="text-[8px] text-slate-300 font-mono">金庫在高</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 2: 右上【厨房・フライヤー】 -->
+        <div id="station-kitchen" class="absolute top-26 right-6 sm:right-12 flex flex-col items-center furniture-shadow cursor-pointer" onclick="clickStation('kitchen')">
+          <div class="bg-emerald-100/90 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
+            🍗 フライヤー＆仕込み台
+          </div>
+          <div class="flex items-end gap-1.5">
+            <div class="w-20 h-16 bg-slate-300 rounded-xl border-2 border-slate-500 shadow-md p-1.5 flex flex-col justify-between">
+              <div class="flex justify-between items-center text-[9px] font-bold text-slate-700">
+                <span>油温</span>
+                <span class="text-rose-600 font-mono">175℃</span>
+              </div>
+              <div class="w-full h-7 bg-amber-400 rounded border border-amber-600 flex items-center justify-center text-xs overflow-hidden">
+                <span class="animate-bounce">🍗 🍟</span>
+              </div>
+            </div>
+            <div class="w-16 h-18 bg-amber-100 rounded-xl border-2 border-amber-400 shadow-md p-1 flex flex-col items-center justify-center text-center">
+              <span class="text-[8px] font-black text-amber-900">ゆだやチキン</span>
+              <span class="text-xs font-black text-emerald-700 mt-0.5">残8個</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 3: 左下【レジ・カウンター】 -->
+        <div id="station-counter" class="absolute bottom-6 left-6 sm:left-14 flex flex-col items-center furniture-shadow cursor-pointer" onclick="clickStation('counter')">
+          <div class="bg-sky-100/90 text-sky-900 border border-sky-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
+            🏪 レジ・金券カウンター
+          </div>
+          <div class="w-36 h-16 bg-amber-600 rounded-2xl border-2 border-amber-800 shadow-md p-2 flex items-center justify-between text-white">
+            <div class="w-12 h-11 bg-slate-800 rounded-lg p-1 flex flex-col justify-between border border-slate-600">
+              <div class="text-[7px] text-emerald-400 font-mono">POS 1</div>
+              <div class="text-[9px] text-center">🧾 ¥150K</div>
+            </div>
+            <div class="w-9 h-10 bg-amber-100 text-amber-900 rounded p-1 text-center border border-amber-400 flex flex-col justify-center">
+              <span class="text-[7px] font-bold">切手</span>
+              <span class="text-[10px]">✉️</span>
+            </div>
+            <div class="w-12 h-11 bg-slate-800 rounded-lg p-1 flex flex-col justify-between border border-slate-600">
+              <div class="text-[7px] text-emerald-400 font-mono">POS 2</div>
+              <div class="text-[9px] text-center">🧾 ¥150K</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 4: 右下【じい君の縁側・休憩室】 -->
+        <div id="station-breakroom" class="absolute bottom-6 right-6 sm:right-14 flex flex-col items-center furniture-shadow cursor-pointer" onclick="clickStation('breakroom')">
+          <div class="bg-amber-100/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
+            🍵 じい君の縁側・畳スペース
+          </div>
+          <div class="w-36 h-20 bg-emerald-100 rounded-2xl border-4 border-amber-600 shadow-md p-2 relative flex items-center justify-around">
+            <div class="w-12 h-12 bg-indigo-500 rounded-lg shadow-inner border border-indigo-700 flex items-center justify-center">
+              <span class="text-[10px] text-white font-bold">座布団</span>
+            </div>
+            <div class="w-14 h-14 bg-amber-800 rounded-full border-2 border-amber-950 flex flex-col items-center justify-center shadow">
+              <div class="text-[10px] relative">
+                <span class="absolute -top-3 left-1 text-white text-[10px] steam-effect">♨️</span>
+                🍵
+              </div>
+              <span class="text-[7px] text-amber-100 font-bold mt-0.5">八女茶</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Floor: Owner Area -->
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-200/70 border border-amber-300 px-3 py-0.5 rounded-full text-[10px] text-amber-900 font-bold">
+          👑 湯田 代表 指揮エリア
+        </div>
+
+        <!-- ================= 4 DYNAMIC ANIMAL AVATARS ================= -->
+
+        <!-- 1. 店長AI (Manager: たぬき風) -->
+        <div id="avatar-manager" class="absolute transition-all duration-700 ease-out z-20 flex flex-col items-center cursor-pointer" onclick="speakAvatar('manager')">
+          <div id="bubble-manager" class="hidden mb-1 pop-bubble bg-white text-slate-800 px-2.5 py-1 rounded-2xl border-2 border-sky-400 text-[11px] font-black shadow-lg whitespace-nowrap relative">
+            <span id="text-manager">シフト作成中！</span>
+            <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b-2 border-r-2 border-sky-400 rotate-45"></div>
+          </div>
+          <div class="avatar-sprite avatar-idle w-14 h-16 flex flex-col items-center">
+            <div class="w-11 h-11 bg-amber-700 rounded-full border-2 border-amber-900 relative shadow flex items-center justify-center">
+              <div class="absolute -top-1.5 -left-1 w-4 h-4 bg-amber-800 rounded-full border border-amber-900"></div>
+              <div class="absolute -top-1.5 -right-1 w-4 h-4 bg-amber-800 rounded-full border border-amber-900"></div>
+              <div class="w-7 h-5 bg-amber-200 rounded-full flex items-center justify-around px-1 mt-1">
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+              </div>
+              <div class="absolute -bottom-1 w-4 h-4 bg-blue-600 rounded-full border border-white flex items-center justify-center text-[7px] text-white font-bold">
+                店
+              </div>
+            </div>
+            <div class="w-8 h-5 bg-sky-600 rounded-b-xl border border-sky-800 -mt-1 shadow"></div>
+          </div>
+          <span class="text-[10px] font-black text-sky-900 bg-white/90 px-1.5 rounded-full shadow-sm border border-sky-200 mt-0.5">店長AI</span>
+        </div>
+
+        <!-- 2. 厨房担当AI (Kitchen: ひよこコック風) -->
+        <div id="avatar-kitchen" class="absolute transition-all duration-700 ease-out z-20 flex flex-col items-center cursor-pointer" onclick="speakAvatar('kitchen')">
+          <div id="bubble-kitchen" class="hidden mb-1 pop-bubble bg-white text-slate-800 px-2.5 py-1 rounded-2xl border-2 border-emerald-400 text-[11px] font-black shadow-lg whitespace-nowrap relative">
+            <span id="text-kitchen">名物チキン揚げます！</span>
+            <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b-2 border-r-2 border-emerald-400 rotate-45"></div>
+          </div>
+          <div class="avatar-sprite avatar-idle w-14 h-16 flex flex-col items-center">
+            <div class="w-6 h-4 bg-white rounded-t-full border border-slate-300 -mb-1 z-10"></div>
+            <div class="w-11 h-11 bg-amber-300 rounded-full border-2 border-amber-500 relative shadow flex items-center justify-center">
+              <div class="w-7 h-5 flex items-center justify-around px-1">
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+                <div class="w-2.5 h-2 bg-orange-500 rounded-full"></div>
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+              </div>
+            </div>
+            <div class="w-8 h-5 bg-emerald-600 rounded-b-xl border border-emerald-800 -mt-1 shadow flex items-center justify-center">
+              <span class="text-[7px] text-white font-bold">FF</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-black text-emerald-900 bg-white/90 px-1.5 rounded-full shadow-sm border border-emerald-200 mt-0.5">厨房AI</span>
+        </div>
+
+        <!-- 3. 接客リーダーAI (Register: ミケネコ風) -->
+        <div id="avatar-register" class="absolute transition-all duration-700 ease-out z-20 flex flex-col items-center cursor-pointer" onclick="speakAvatar('register')">
+          <div id="bubble-register" class="hidden mb-1 pop-bubble bg-white text-slate-800 px-2.5 py-1 rounded-2xl border-2 border-indigo-400 text-[11px] font-black shadow-lg whitespace-nowrap relative">
+            <span id="text-register">いらっしゃいませ！</span>
+            <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b-2 border-r-2 border-indigo-400 rotate-45"></div>
+          </div>
+          <div class="avatar-sprite avatar-idle w-14 h-16 flex flex-col items-center">
+            <div class="w-11 h-11 bg-slate-100 rounded-full border-2 border-slate-300 relative shadow flex items-center justify-center">
+              <div class="absolute -top-1.5 -left-0.5 w-3.5 h-3.5 bg-orange-400 rounded-sm rotate-45 border border-orange-600"></div>
+              <div class="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-slate-700 rounded-sm rotate-45 border border-slate-900"></div>
+              <div class="w-7 h-5 flex items-center justify-around px-1 mt-1">
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+                <div class="text-[8px]">ω</div>
+                <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+              </div>
+              <div class="absolute -left-1 top-3 w-1.5 h-4 bg-slate-800 rounded"></div>
+            </div>
+            <div class="w-8 h-5 bg-indigo-600 rounded-b-xl border border-indigo-800 -mt-1 shadow flex items-center justify-center">
+              <span class="text-[7px] text-white font-bold">POS</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-black text-indigo-900 bg-white/90 px-1.5 rounded-full shadow-sm border border-indigo-200 mt-0.5">リーダーAI</span>
+        </div>
+
+        <!-- 4. じい君 (Jiikun: カメ風相談役) -->
+        <div id="avatar-jiikun" class="absolute transition-all duration-700 ease-out z-20 flex flex-col items-center cursor-pointer" onclick="speakAvatar('jiikun')">
+          <div id="bubble-jiikun" class="hidden mb-1 pop-bubble bg-white text-slate-800 px-2.5 py-1 rounded-2xl border-2 border-amber-500 text-[11px] font-black shadow-lg whitespace-nowrap relative">
+            <span id="text-jiikun">お茶がうまいわい〜</span>
+            <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b-2 border-r-2 border-amber-500 rotate-45"></div>
+          </div>
+          <div class="avatar-sprite avatar-idle w-14 h-16 flex flex-col items-center">
+            <div class="w-11 h-11 bg-amber-200 rounded-full border-2 border-amber-400 relative shadow flex items-center justify-center">
+              <div class="w-8 h-6 flex flex-col items-center justify-center">
+                <div class="text-[8px] text-slate-600 font-black">〜 〜</div>
+                <div class="flex items-center gap-1">
+                  <div class="w-2.5 h-2.5 border-2 border-amber-800 rounded-full"></div>
+                  <div class="w-2.5 h-2.5 border-2 border-amber-800 rounded-full"></div>
+                </div>
+                <div class="text-[7px]">◡</div>
+              </div>
+            </div>
+            <div class="w-9 h-5 bg-amber-600 rounded-b-xl border border-amber-800 -mt-1 shadow flex items-center justify-center">
+              <span class="text-[7px] text-amber-100 font-bold">相談役</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-black text-amber-950 bg-white/90 px-1.5 rounded-full shadow-sm border border-amber-300 mt-0.5">じい君</span>
+        </div>
+
+      </div>
+
+      <!-- ================= OWNER COMMAND BAR ================= -->
+      <div class="bg-amber-100/60 p-3 sm:p-4 border-t-2 border-amber-200 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs font-black text-amber-900 flex items-center gap-1.5">
+            📢 湯田代表のワンタップ命令（押すと担当エージェントが現場へ走ります！）:
+          </span>
+          <span class="text-[11px] text-amber-800">直接指示で自律行動開始</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button onclick="orderAgent('kitchen', 'kitchen', 'ゆだや名物チキン10個の追加仕込みを開始します！')" 
+                  class="px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-800 rounded-2xl border-2 border-emerald-400 font-black text-xs shadow-sm hover:shadow transition flex items-center justify-center gap-2 transform active:scale-95">
+            <span class="text-base">🍗</span>
+            <span>厨房へ: チキン仕込み</span>
+          </button>
+
+          <button onclick="orderAgent('register', 'counter', '14時の釣銭準備金・金庫在高を点検します！')" 
+                  class="px-3 py-2 bg-white hover:bg-indigo-50 text-indigo-800 rounded-2xl border-2 border-indigo-400 font-black text-xs shadow-sm hover:shadow transition flex items-center justify-center gap-2 transform active:scale-95">
+            <span class="text-base">💰</span>
+            <span>レジへ: 現金・金庫点検</span>
+          </button>
+
+          <button onclick="orderAgent('manager', 'office', '翌週シフトの希望集計とコマ割り調整に入ります！')" 
+                  class="px-3 py-2 bg-white hover:bg-sky-50 text-sky-800 rounded-2xl border-2 border-sky-400 font-black text-xs shadow-sm hover:shadow transition flex items-center justify-center gap-2 transform active:scale-95">
+            <span class="text-base">📋</span>
+            <span>本部へ: シフト策定</span>
+          </button>
+
+          <button onclick="orderAgent('jiikun', 'breakroom', 'フォッフォッフォ、お茶を淹れて待っとるぞい！')" 
+                  class="px-3 py-2 bg-white hover:bg-amber-50 text-amber-900 rounded-2xl border-2 border-amber-400 font-black text-xs shadow-sm hover:shadow transition flex items-center justify-center gap-2 transform active:scale-95">
+            <span class="text-base">🍵</span>
+            <span>縁側へ: じい君とお茶</span>
+          </button>
+        </div>
+
+        <!-- Custom Command Input -->
+        <div class="flex gap-2 pt-1">
+          <input type="text" id="ownerCustomCommand" placeholder="湯田代表として自由な指示を出す（例: チキン揚げて / シフト見せて / じい君ありがとう）..." 
+                 class="flex-1 bg-white border-2 border-amber-300 rounded-2xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-inner"
+                 onkeypress="if(event.key === 'Enter') sendCustomCommand()">
+          <button onclick="sendCustomCommand()" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl font-black text-xs shadow-md transition flex items-center gap-1.5 transform active:scale-95">
+            <span>命令送信</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. 下部：タスク進捗掲示板（カンバン） & インカム会話ログ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- KANBAN BOARD (8 cols) -->
+      <div class="lg:col-span-8 bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-4 flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b-2 border-amber-100 mb-3">
+          <div class="flex items-center gap-2 font-black text-sm text-amber-950">
+            <span class="text-base">📌</span>
+            <span>株式会社ゆだや タスク進捗掲示板（カンバン）</span>
+          </div>
+          <span class="text-xs bg-rose-100 text-rose-800 font-black px-3 py-1 rounded-full border border-rose-300">
+            代表承認待ち: <strong id="kanbanPendingBadge">2</strong> 件
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 overflow-x-auto pb-2">
+          <!-- Col 1: Todo -->
+          <div class="bg-amber-50/70 rounded-2xl p-2.5 border-2 border-amber-200 min-h-[320px] flex flex-col">
+            <div class="font-black text-xs text-amber-800 mb-2 pb-1 border-b border-amber-200 flex justify-between">
+              <span>未着手</span>
+              <span id="count-todo" class="bg-amber-200 px-1.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="col-todo" class="space-y-2 flex-1"></div>
+          </div>
+          <!-- Col 2: Progress -->
+          <div class="bg-sky-50/70 rounded-2xl p-2.5 border-2 border-sky-200 min-h-[320px] flex flex-col">
+            <div class="font-black text-xs text-sky-800 mb-2 pb-1 border-b border-sky-200 flex justify-between">
+              <span>実施中</span>
+              <span id="count-progress" class="bg-sky-200 px-1.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="col-progress" class="space-y-2 flex-1"></div>
+          </div>
+          <!-- Col 3: Review -->
+          <div class="bg-yellow-50/70 rounded-2xl p-2.5 border-2 border-yellow-300 min-h-[320px] flex flex-col">
+            <div class="font-black text-xs text-yellow-900 mb-2 pb-1 border-b border-yellow-200 flex justify-between">
+              <span>点検中</span>
+              <span id="count-review" class="bg-yellow-200 px-1.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="col-review" class="space-y-2 flex-1"></div>
+          </div>
+          <!-- Col 4: Approval -->
+          <div class="bg-rose-50/90 rounded-2xl p-2.5 border-2 border-rose-300 min-h-[320px] flex flex-col shadow-inner">
+            <div class="font-black text-xs text-rose-800 mb-2 pb-1 border-b border-rose-200 flex justify-between">
+              <span>要 代表承認</span>
+              <span id="count-approval" class="bg-rose-500 text-white px-1.5 rounded-full text-[10px] font-black">0</span>
+            </div>
+            <div id="col-approval" class="space-y-2 flex-1"></div>
+          </div>
+          <!-- Col 5: Done -->
+          <div class="bg-emerald-50/70 rounded-2xl p-2.5 border-2 border-emerald-200 min-h-[320px] flex flex-col">
+            <div class="font-black text-xs text-emerald-800 mb-2 pb-1 border-b border-emerald-200 flex justify-between">
+              <span>完了</span>
+              <span id="count-done" class="bg-emerald-200 px-1.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="col-done" class="space-y-2 flex-1"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERCOM TIMELINE (4 cols) -->
+      <div class="lg:col-span-4 bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-4 flex flex-col h-[400px]">
+        <div class="flex items-center justify-between pb-2.5 border-b-2 border-amber-100 mb-2">
+          <div class="flex items-center gap-2 font-black text-sm text-amber-950">
+            <span>📻 店内インカム＆思考ログ</span>
+          </div>
+          <span class="text-[10px] text-emerald-700 font-bold">● 通話中</span>
+        </div>
+        <div id="intercomChatBox" class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL: APPROVAL WITH STAMP ================= -->
+  <div id="approvalModal" class="fixed inset-0 bg-amber-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-rose-400 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+      <div class="bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">💮</span>
+          <div>
+            <h3 class="font-black text-base">代表承認ゲーティング (Human-in-the-Loop)</h3>
+            <p class="text-xs text-rose-100">湯田代表、内容を確認して承認スタンプを押してください</p>
+          </div>
+        </div>
+        <button onclick="closeApprovalModal()" class="text-white hover:text-rose-200 text-2xl font-bold">&times;</button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs" id="approvalModalContent"></div>
+
+      <div class="bg-amber-50 px-6 py-4 border-t-2 border-amber-100 flex items-center justify-between">
+        <button onclick="rejectCurrentTask()" class="px-4 py-2 border-2 border-slate-300 text-slate-700 font-black rounded-2xl hover:bg-slate-100 transition">
+          ↩️ 修正指示（差し戻し）
+        </button>
+        <button onclick="approveCurrentTask()" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-2xl shadow-lg transition flex items-center gap-2 transform active:scale-95">
+          <span class="text-base">💮</span>
+          <span>代表承認印を押して確定！</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: APP LAUNCHER (自作アプリ棚) ================= -->
+  <div id="launcherModal" class="fixed inset-0 bg-amber-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-amber-400 max-w-4xl w-full h-[80vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-3.5 bg-amber-500 text-amber-950 flex items-center justify-between border-b-2 border-amber-600">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧰</span>
+          <h3 class="font-black text-sm">株式会社ゆだや 自作アプリ統合ランチャー</h3>
+        </div>
+        <button onclick="closeLauncherModal()" class="text-2xl font-black text-amber-950">&times;</button>
+      </div>
+
+      <div class="bg-amber-100/70 p-2.5 border-b-2 border-amber-200 flex gap-2 overflow-x-auto text-xs font-black">
+        <button onclick="selectApp('shift')" id="tab-shift" class="px-3 py-1.5 rounded-xl bg-white text-emerald-800 shadow-sm border border-amber-300">
+          📅 1. シフト管理
+        </button>
+        <button onclick="selectApp('ff')" id="tab-ff" class="px-3 py-1.5 rounded-xl text-amber-800 hover:bg-white/50">
+          🍗 2. FF調理・廃棄
+        </button>
+        <button onclick="selectApp('safe')" id="tab-safe" class="px-3 py-1.5 rounded-xl text-amber-800 hover:bg-white/50">
+          💰 3. 金庫・レジ引継
+        </button>
+        <button onclick="selectApp('stamps')" id="tab-stamps" class="px-3 py-1.5 rounded-xl text-amber-800 hover:bg-white/50">
+          ✉️ 4. 切手・金券管理
+        </button>
+      </div>
+
+      <div class="flex-1 bg-amber-50/40 p-5 overflow-y-auto" id="appViewerContainer"></div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT: AVATAR COORDINATES & ANIMATION ================= -->
+  <script>
+    let currentStore = 'hakata';
+    let pendingTaskId = null;
+
+    const stationCoords = {
+      office: { x: 18, y: 35 },
+      kitchen: { x: 78, y: 35 },
+      counter: { x: 22, y: 70 },
+      breakroom: { x: 78, y: 70 },
+      center: { x: 50, y: 55 }
+    };
+
+    const avatars = {
+      manager: { id: 'manager', name: '店長AI', currentX: 18, currentY: 35, elementId: 'avatar-manager' },
+      kitchen: { id: 'kitchen', name: '厨房AI', currentX: 78, currentY: 35, elementId: 'avatar-kitchen' },
+      register: { id: 'register', name: 'リーダーAI', currentX: 22, currentY: 70, elementId: 'avatar-register' },
+      jiikun: { id: 'jiikun', name: 'じい君', currentX: 78, currentY: 70, elementId: 'avatar-jiikun' }
+    };
+
+    let tasks = [
+      {
+        id: 'T-101',
+        title: '翌週シフト希望集計と最適コマ割り策定',
+        assignee: 'manager',
+        station: 'office',
+        status: 'approval',
+        summary: 'スタッフ12名の希望に基づき、昼ピーク3名配置のシフト案を作成。人件費予算比97.4%',
+        diff: '+2名補強 (金曜夜間), 総人件費: ¥248,500/週',
+        dbTarget: 'Googleスプレッドシート「ゆだやシフト管理DB_博多住吉」'
+      },
+      {
+        id: 'T-102',
+        title: '14:00 レジ交代・釣銭準備金＆金庫在高点検',
+        assignee: 'register',
+        station: 'counter',
+        status: 'approval',
+        summary: '日中交代のレジ1・2点検完了。金庫内硬貨ロール照合済。違算0円。',
+        diff: 'レジ在高: ¥150,000 (適正), 金庫保管金: ¥482,000 (違算なし)',
+        dbTarget: 'Googleスプレッドシート「ゆだや金庫引継ぎ管理DB」'
+      },
+      {
+        id: 'T-103',
+        title: 'ランチピーク前 ゆだや名物チキン仕込み',
+        assignee: 'kitchen',
+        station: 'kitchen',
+        status: 'progress',
+        summary: '福岡晴天（24℃）予測に基づき、骨なしチキン24個・スパイシー16個仕込み中。',
+        diff: '推奨調理数: 40個 (+15%)',
+        dbTarget: 'Googleスプレッドシート「ゆだやFF管理」'
+      },
+      {
+        id: 'T-104',
+        title: '切手・収入印紙・レターパック棚卸',
+        assignee: 'register',
+        station: 'counter',
+        status: 'review',
+        summary: 'レターパックライト残4枚（安全在庫5枚未満のため発注推奨）。',
+        diff: 'レターパックライト発注要請: 20部',
+        dbTarget: '金券在庫管理シート'
+      }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      placeAvatars();
+      renderKanban();
+      renderChat();
+      startWallClock();
+    });
+
+    function startWallClock() {
+      setInterval(() => {
+        const d = new Date();
+        document.getElementById('roomWallClock').innerText = d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+      }, 1000);
+    }
+
+    function placeAvatars() {
+      Object.values(avatars).forEach(a => {
+        const el = document.getElementById(a.elementId);
+        if (el) {
+          el.style.left = `${a.currentX}%`;
+          el.style.top = `${a.currentY}%`;
+        }
+      });
+    }
+
+    function moveAvatar(avatarId, targetStationKey, messageOnArrival) {
+      const a = avatars[avatarId];
+      const target = stationCoords[targetStationKey];
+      if (!a || !target) return;
+
+      const el = document.getElementById(a.elementId);
+      const sprite = el.querySelector('.avatar-sprite');
+
+      sprite.classList.remove('avatar-idle');
+      sprite.classList.add('avatar-walk');
+
+      showBubble(avatarId, 'トコトコ...');
+
+      a.currentX = target.x;
+      a.currentY = target.y;
+      el.style.left = `${target.x}%`;
+      el.style.top = `${target.y}%`;
+
+      setTimeout(() => {
+        sprite.classList.remove('avatar-walk');
+        sprite.classList.add('avatar-work');
+
+        if (messageOnArrival) {
+          showBubble(avatarId, messageOnArrival);
+          addChat(avatarId, messageOnArrival);
+        }
+
+        setTimeout(() => {
+          sprite.classList.remove('avatar-work');
+          sprite.classList.add('avatar-idle');
+        }, 3000);
+      }, 700);
+    }
+
+    function showBubble(avatarId, text) {
+      const b = document.getElementById(`bubble-${avatarId}`);
+      const t = document.getElementById(`text-${avatarId}`);
+      if (b && t) {
+        t.innerText = text;
+        b.classList.remove('hidden');
+        setTimeout(() => { b.classList.add('hidden'); }, 3500);
+      }
+    }
+
+    function speakAvatar(avatarId) {
+      const lines = {
+        manager: ['「湯田代表、何かご指示はありますか？」', '「株式会社ゆだやのシフト最適化、順調です！」'],
+        kitchen: ['「ゆだや名物チキン、いつでも揚げられますよ！」', '「油温バッチリ175℃です！」'],
+        register: ['「いらっしゃいませ！今日も笑顔で接客中！」', '「レジの釣銭点検、違算ゼロです！」'],
+        jiikun: ['「フォッフォッフォ、恭平代表お疲れ様じゃ。」', '「無理したらいかんぞ。八女茶でも飲むかの？」']
+      };
+      const p = lines[avatarId][Math.floor(Math.random() * lines[avatarId].length)];
+      showBubble(avatarId, p);
+      addChat(avatarId, p);
+    }
+
+    function clickStation(stationKey) {
+      if (stationKey === 'kitchen') orderAgent('kitchen', 'kitchen', 'フライヤーの温度と仕込みを点検します！');
+      if (stationKey === 'counter') orderAgent('register', 'counter', 'レジの現金と金券ケースを確認します！');
+      if (stationKey === 'office') orderAgent('manager', 'office', 'ゆだや本部PCでシフトデータを同期中...');
+      if (stationKey === 'breakroom') orderAgent('jiikun', 'breakroom', 'ワシの特製お茶をどうぞ〜');
+    }
+
+    function orderAgent(avatarId, stationKey, speech) {
+      moveAvatar(avatarId, stationKey, speech);
+    }
+
+    function sendCustomCommand() {
+      const input = document.getElementById('ownerCustomCommand');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addChat('owner', text);
+      input.value = '';
+
+      if (text.includes('チキン') || text.includes('揚げ') || text.includes('FF')) {
+        moveAvatar('kitchen', 'kitchen', '了解です！名物チキンを急いで仕込みます！');
+      } else if (text.includes('シフト') || text.includes('人件費')) {
+        moveAvatar('manager', 'office', '了解です！ゆだやシフト案をすぐ再集計します！');
+      } else if (text.includes('レジ') || text.includes('金庫') || text.includes('金券')) {
+        moveAvatar('register', 'counter', '了解です！ただいま金庫・レジを点検します！');
+      } else if (text.includes('じい君') || text.includes('お茶') || text.includes('ありがとう')) {
+        moveAvatar('jiikun', 'breakroom', 'ありがとなぁ〜！いつでもここにおるぞい。');
+      } else {
+        moveAvatar('manager', 'center', `代表の指示「${text}」を確認しました！`);
+      }
+    }
+
+    function renderKanban() {
+      const cols = {
+        todo: document.getElementById('col-todo'),
+        progress: document.getElementById('col-progress'),
+        review: document.getElementById('col-review'),
+        approval: document.getElementById('col-approval'),
+        done: document.getElementById('col-done')
+      };
+      Object.values(cols).forEach(c => c.innerHTML = '');
+
+      let counts = { todo: 0, progress: 0, review: 0, approval: 0, done: 0 };
+
+      tasks.forEach(t => {
+        counts[t.status]++;
+        const col = cols[t.status];
+        if (!col) return;
+
+        const card = document.createElement('div');
+        const isApproval = t.status === 'approval';
+        card.className = `p-2.5 rounded-xl border-2 text-xs flex flex-col gap-1.5 transition ${isApproval ? 'bg-rose-50/90 border-rose-400 shadow pulse-border' : 'bg-white border-amber-200 shadow-sm'}`;
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center text-[10px] font-bold">
+            <span class="text-amber-800">${avatars[t.assignee] ? avatars[t.assignee].name : 'AI'}</span>
+            <span class="text-slate-400">${t.id}</span>
+          </div>
+          <div class="font-black text-slate-800 leading-tight">${t.title}</div>
+          <div class="text-[11px] text-slate-600">${t.summary}</div>
+          <div class="flex justify-end pt-1 border-t border-slate-100">
+            ${isApproval ? `
+              <button onclick="openApprovalModal('${t.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-[10px] shadow">
+                💮 代表承認判定
+              </button>
+            ` : `
+              <button onclick="advanceTask('${t.id}')" class="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[10px]">
+                進める →
+              </button>
+            `}
+          </div>
+        `;
+        col.appendChild(card);
+      });
+
+      document.getElementById('count-todo').innerText = counts.todo;
+      document.getElementById('count-progress').innerText = counts.progress;
+      document.getElementById('count-review').innerText = counts.review;
+      document.getElementById('count-approval').innerText = counts.approval;
+      document.getElementById('count-done').innerText = counts.done;
+      document.getElementById('kanbanPendingBadge').innerText = counts.approval;
+    }
+
+    function advanceTask(id) {
+      const t = tasks.find(x => x.id === id);
+      if (!t) return;
+      if (t.status === 'todo') {
+        t.status = 'progress';
+        moveAvatar(t.assignee, t.station, `【${t.title}】に着手しました！`);
+      } else if (t.status === 'progress') {
+        t.status = 'review';
+        showBubble(t.assignee, '点検に入ります！');
+      } else if (t.status === 'review') {
+        t.status = 'approval';
+        moveAvatar('manager', 'center', '湯田代表、承認をお願いします！');
+      }
+      renderKanban();
+    }
+
+    function openApprovalModal(id) {
+      pendingTaskId = id;
+      const t = tasks.find(x => x.id === id);
+      if (!t) return;
+
+      document.getElementById('approvalModalContent').innerHTML = `
+        <div class="bg-amber-50 p-3.5 rounded-2xl border-2 border-amber-200">
+          <span class="text-rose-600 font-black text-[10px]">要 代表取締役承認</span>
+          <h4 class="font-black text-sm text-slate-800 mt-1">${t.title}</h4>
+          <p class="text-slate-600 mt-1">${t.summary}</p>
+        </div>
+        <div class="p-3 bg-white rounded-2xl border-2 border-rose-200">
+          <div class="font-bold text-rose-800">実務反映差分プレビュー:</div>
+          <div class="font-mono text-rose-900 bg-rose-50 p-2 rounded-xl mt-1 font-bold">${t.diff}</div>
+          <div class="text-[10px] text-sky-700 mt-1.5 font-bold">更新先: ${t.dbTarget}</div>
+        </div>
+      `;
+      document.getElementById('approvalModal').classList.remove('hidden');
+    }
+
+    function closeApprovalModal() {
+      document.getElementById('approvalModal').classList.add('hidden');
+      pendingTaskId = null;
+    }
+
+    function approveCurrentTask() {
+      const t = tasks.find(x => x.id === pendingTaskId);
+      if (t) {
+        t.status = 'done';
+        closeApprovalModal();
+        renderKanban();
+
+        showBubble('manager', '代表承認ありがとうございます！');
+        addChat('manager', `【代表承認確定】湯田代表により【${t.title}】が承認され、ゆだやDBへ反映されました！`);
+        
+        setTimeout(() => {
+          showBubble('jiikun', 'さすが代表じゃのう〜！');
+          addChat('jiikun', '恭平代表、承認ありがとうな！株式会社ゆだや、今日も順調じゃ。');
+        }, 1000);
+      }
+    }
+
+    function rejectCurrentTask() {
+      const t = tasks.find(x => x.id === pendingTaskId);
+      if (t) {
+        t.status = 'progress';
+        closeApprovalModal();
+        renderKanban();
+        showBubble(t.assignee, '修正します！');
+        addChat('manager', `【差し戻し】湯田代表より【${t.title}】の修正指示が入りました。`);
+      }
+    }
+
+    let chatLogs = [
+      { sender: 'manager', text: '博多住吉通り店のシフト案を代表承認に上げました。' },
+      { sender: 'register', text: '14時のレジ点検、違算ゼロで完了しています！' },
+      { sender: 'kitchen', text: '厨房フライヤー油温175℃、ゆだやチキン仕込み準備万全！' },
+      { sender: 'jiikun', text: '恭平代表、今日もファイトじゃよ。八女茶淹れたてじゃ。' }
+    ];
+
+    function renderChat() {
+      const box = document.getElementById('intercomChatBox');
+      if (!box) return;
+      box.innerHTML = '';
+      chatLogs.forEach(l => {
+        const isOwner = l.sender === 'owner';
+        const d = document.createElement('div');
+        d.className = isOwner ? 'flex flex-col items-end' : 'flex flex-col items-start';
+        d.innerHTML = `
+          <span class="text-[9px] text-amber-900/60 mb-0.5">${isOwner ? '湯田代表' : (avatars[l.sender] ? avatars[l.sender].name : 'AI')}</span>
+          <div class="px-3 py-1.5 rounded-2xl text-xs max-w-[85%] font-medium ${isOwner ? 'bg-emerald-700 text-white rounded-tr-none shadow-sm' : 'bg-amber-100 text-amber-950 rounded-tl-none border border-amber-200 shadow-sm'}">
+            ${l.text}
+          </div>
+        `;
+        box.appendChild(d);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function addChat(sender, text) {
+      chatLogs.push({ sender, text });
+      renderChat();
+    }
+
+    function switchStore(store) {
+      currentStore = store;
+      const b1 = document.getElementById('btnStore1');
+      const b2 = document.getElementById('btnStore2');
+      const title = document.getElementById('roomStoreTitle');
+
+      if (store === 'hakata') {
+        b1.className = 'px-3 py-1.5 rounded-xl font-black text-xs transition bg-white text-emerald-800 shadow-sm border border-amber-200';
+        b2.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition text-amber-800 hover:text-amber-950';
+        title.innerText = '博多住吉通り店：ゆだや自律作業ルーム';
+        addChat('manager', '博多住吉通り店のルームに切り替えました。');
+      } else {
+        b2.className = 'px-3 py-1.5 rounded-xl font-black text-xs transition bg-white text-sky-700 shadow-sm border border-amber-200';
+        b1.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition text-amber-800 hover:text-amber-950';
+        title.innerText = '福岡清川二丁目店：ゆだや自律作業ルーム';
+        addChat('manager', '福岡清川二丁目店のルームに切り替えました。');
+      }
+    }
+
+    function openLauncherModal() {
+      document.getElementById('launcherModal').classList.remove('hidden');
+      selectApp('shift');
+    }
+    function closeLauncherModal() {
+      document.getElementById('launcherModal').classList.add('hidden');
+    }
+    function selectApp(type) {
+      const area = document.getElementById('appViewerContainer');
+      if (type === 'shift') {
+        area.innerHTML = `
+          <div class="bg-white p-5 rounded-2xl border-2 border-amber-200 shadow-sm space-y-3">
+            <h4 class="font-black text-sm text-emerald-800">📅 ゆだやシフト管理アプリ (スプレッドシート連携)</h4>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <div class="p-3 bg-amber-50 rounded-xl">総稼働: <strong>224.5h</strong></div>
+              <div class="p-3 bg-emerald-50 rounded-xl text-emerald-800">予算比: <strong>97.4%</strong></div>
+              <div class="p-3 bg-sky-50 rounded-xl text-sky-800">不足: <strong>0コマ</strong></div>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl text-xs">
+              <div>・月曜: 田中(早番 08-17), グエン(遅番 17-22)</div>
+              <div>・火曜: 田中(早番 08-17), 佐藤(中番 12-17)</div>
+            </div>
+          </div>
+        `;
+      } else if (type === 'ff') {
+        area.innerHTML = `
+          <div class="bg-white p-5 rounded-2xl border-2 border-amber-200 shadow-sm space-y-3">
+            <h4 class="font-black text-sm text-emerald-800">🍗 ゆだやFF調理・廃棄管理</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-3 bg-emerald-50 rounded-xl">ゆだや骨なしチキン: 仕込み24個 / 残8個</div>
+              <div class="p-3 bg-amber-50 rounded-xl">スパイシーチキン: 仕込み16個 / 残5個</div>
+            </div>
+          </div>
+        `;
+      } else if (type === 'safe') {
+        area.innerHTML = `
+          <div class="bg-white p-5 rounded-2xl border-2 border-amber-200 shadow-sm space-y-3">
+            <h4 class="font-black text-sm text-indigo-800">💰 ゆだや金庫・レジ引継ぎ管理</h4>
+            <p class="text-xs">POS1: ¥150,000 / POS2: ¥150,000 / 金庫保管金: ¥482,000 (違算0円)</p>
+          </div>
+        `;
+      } else if (type === 'stamps') {
+        area.innerHTML = `
+          <div class="bg-white p-5 rounded-2xl border-2 border-amber-200 shadow-sm space-y-3">
+            <h4 class="font-black text-sm text-amber-900">✉️ 切手・金券管理</h4>
+            <p class="text-xs">84円切手: 42枚 / レターパックライト: 4枚 (<span class="text-rose-600 font-bold">発注推奨</span>)</p>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
