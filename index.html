@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>株式会社ゆだや - バーチャル店舗統合管理ルーム</title>
+  <title>株式会社ゆだや - バーチャルコンビニ統合ルーム</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -22,31 +22,34 @@
   <style>
     body {
       font-family: 'M PLUS Rounded 1c', sans-serif;
-      background-color: #f6f1e5;
-      background-image: radial-gradient(#e5dbc5 1.5px, transparent 1.5px);
+      background-color: #f1f5f9;
+      background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
       background-size: 20px 20px;
     }
-    .room-floor {
-      background-color: #edd9b8;
-      background-image: repeating-linear-gradient(0deg, #e3cdab, #e3cdab 30px, #dcbe96 30px, #dcbe96 60px);
-      box-shadow: inset 0 0 40px rgba(115, 80, 40, 0.15);
+    /* コンビニ特有の清潔な白いPタイル床 */
+    .conbini-floor {
+      background-color: #f8fafc;
+      background-image: 
+        linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px);
+      background-size: 32px 32px;
+      box-shadow: inset 0 0 50px rgba(100, 116, 139, 0.1);
     }
-    .room-wall {
-      background: linear-gradient(180deg, #dcf0df 0%, #edf7ef 80%, #edd9b8 100%);
-      border-bottom: 8px solid #c9a77b;
+    /* コンビニのガラス壁と天井照明ライン */
+    .conbini-wall {
+      background: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 70%, #cbd5e1 100%);
+      border-bottom: 6px solid #94a3b8;
     }
-    /* 家具のホバーアニメーション（ゲーム風タッチフィードバック） */
-    .touchable-object {
+    /* ゲーム風タッチオブジェクト */
+    .touchable {
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
       cursor: pointer;
     }
-    .touchable-object:hover {
-      transform: scale(1.06) translateY(-4px);
-      filter: drop-shadow(0 12px 14px rgba(46, 125, 50, 0.35));
+    .touchable:hover {
+      transform: scale(1.08) translateY(-4px);
+      filter: drop-shadow(0 10px 12px rgba(16, 185, 129, 0.4));
     }
-    .touchable-object:active {
-      transform: scale(0.96);
-    }
+    .touchable:active { transform: scale(0.95); }
     /* アバターアニメーション */
     .avatar-walk { animation: avatar-waddle 0.35s infinite alternate ease-in-out; }
     @keyframes avatar-waddle {
@@ -68,18 +71,17 @@
       0% { transform: scale(0.3) translateY(10px); opacity: 0; }
       100% { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .furniture-shadow { filter: drop-shadow(0 8px 10px rgba(70, 50, 20, 0.18)); }
-    .pulse-border { animation: pulse-border 2s infinite; }
-    @keyframes pulse-border {
-      0%, 100% { border-color: rgba(225, 29, 72, 0.9); box-shadow: 0 0 10px rgba(225, 29, 72, 0.4); }
-      50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 2px rgba(225, 29, 72, 0.1); }
+    .pulse-door { animation: pulse-door 1.8s infinite; }
+    @keyframes pulse-door {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
     }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col antialiased select-none">
 
   <!-- ================= TOP HEADER ================= -->
-  <header class="bg-white/90 backdrop-blur-md border-b-4 border-amber-200 sticky top-0 z-40 px-4 py-2.5 shadow-sm">
+  <header class="bg-white/95 backdrop-blur-md border-b-4 border-slate-200 sticky top-0 z-40 px-4 py-2.5 shadow-sm">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
       <!-- Brand & Title -->
@@ -89,46 +91,48 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-lg font-black tracking-wide text-amber-950 flex items-center gap-2">
-              <span>株式会社ゆだや 店舗統合ルーム</span>
+            <h1 class="text-lg font-black tracking-wide text-slate-800 flex items-center gap-2">
+              <span>株式会社ゆだや バーチャルコンビニ</span>
               <span id="modeBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
                 🌱 デモ体験中
               </span>
             </h1>
           </div>
-          <p class="text-xs text-amber-800/80 font-medium">
-            <span class="font-black text-emerald-700">株式会社ゆだや</span> 12アプリ統合ポータル＆自律店舗OS
+          <p class="text-xs text-slate-500 font-medium">
+            <span class="font-black text-emerald-700">YUDAYA Store OS</span> リアルタイム店舗オペレーション
           </p>
         </div>
       </div>
 
-      <!-- Store Switcher Tabs -->
-      <div class="flex items-center bg-amber-100/70 p-1.5 rounded-2xl border-2 border-amber-200">
-        <button id="btnStore1" onclick="switchStore('hakata')" class="px-3 py-1.5 rounded-xl font-black text-xs transition bg-white text-emerald-800 shadow-sm border border-amber-200">
-          🏠 博多住吉通り店
-        </button>
-        <button id="btnStore2" onclick="switchStore('kiyokawa')" class="px-3 py-1.5 rounded-xl font-bold text-xs transition text-amber-800 hover:text-amber-950">
-          🏠 福岡清川二丁目店
+      <!-- Current Store Indicator & Town Button -->
+      <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div class="px-3 py-1 bg-white rounded-xl shadow-sm text-xs font-black text-emerald-800 flex items-center gap-1.5 border border-slate-200">
+          <i class="fa-solid fa-store text-emerald-600"></i>
+          <span id="headerStoreName">博多住吉通り店</span>
+        </div>
+        <button onclick="openTownModal()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>博多の街・店舗切替</span>
         </button>
       </div>
 
       <!-- App Shelf & Auth -->
       <div class="flex items-center gap-2.5">
         <button onclick="openLauncherModal()" class="px-4 py-2 bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-xs rounded-2xl border-2 border-amber-600 shadow-md transition transform active:scale-95 flex items-center gap-1.5">
-          <span class="text-sm">🧰</span>
-          <span>ゆだやアプリ棚 (全12種)</span>
+          <span>🧰</span>
+          <span>自作アプリ棚 (12種)</span>
         </button>
 
-        <div id="authContainer" class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-2xl border-2 border-amber-200 shadow-inner">
+        <div id="authContainer" class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-2xl border border-slate-200">
           <button id="loginBtn" onclick="handleLogin()" class="text-xs font-black text-emerald-800 hover:text-emerald-900 flex items-center gap-1">
             <span>🔑 代表ログイン</span>
           </button>
           <div id="userProfile" class="hidden flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center font-black text-xs border border-emerald-500">
+            <div class="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center font-black text-xs">
               代表
             </div>
             <div class="text-left leading-tight">
-              <div class="text-xs font-black text-amber-950" id="userName">湯田 恭平 代表</div>
+              <div class="text-xs font-black text-slate-800" id="userName">湯田 恭平 代表</div>
               <button onclick="handleLogout()" class="text-[10px] text-rose-600 font-bold hover:underline">ログアウト</button>
             </div>
           </div>
@@ -138,151 +142,217 @@
     </div>
   </header>
 
-  <!-- ================= MAIN GAME WORKSPACE ================= -->
+  <!-- ================= MAIN CONBINI FLOOR ================= -->
   <main class="flex-1 p-3 sm:p-5 max-w-7xl w-full mx-auto flex flex-col gap-5">
 
-    <!-- 1. どうぶつの森風の部屋マップ（タッチで実アプリ起動！） -->
-    <div class="bg-white rounded-3xl border-4 border-amber-200 shadow-xl overflow-hidden flex flex-col">
-      <div class="px-4 py-2 bg-amber-50/80 border-b-2 border-amber-200 flex flex-wrap items-center justify-between text-xs">
-        <div class="flex items-center gap-2 font-bold text-amber-900">
+    <!-- 1. コンビニフロアマップ (Interactive Conbini Floor) -->
+    <div class="bg-white rounded-3xl border-4 border-slate-300 shadow-xl overflow-hidden flex flex-col">
+      
+      <!-- Top Floor Info Bar -->
+      <div class="px-4 py-2 bg-slate-100/90 border-b-2 border-slate-200 flex flex-wrap items-center justify-between text-xs">
+        <div class="flex items-center gap-2 font-bold text-slate-700">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="roomStoreTitle">博多住吉通り店：ゆだや自律作業ルーム</span>
-          <span class="text-[11px] bg-white px-2 py-0.5 rounded-full border border-amber-200 text-amber-700">
-            福岡気象: <strong class="text-emerald-700">晴れ 24℃ 🌤️</strong>
+          <span id="roomStoreTitle">博多住吉通り店：店内リアルタイムフロア</span>
+          <span class="text-[11px] bg-white px-2 py-0.5 rounded-full border border-slate-200 text-slate-600">
+            福岡・博多の天気: <strong class="text-emerald-700">晴れ 24℃ 🌤️ (住吉通り人通り: 多)</strong>
           </span>
         </div>
-        <div class="text-emerald-800 font-black text-[11px] flex items-center gap-1">
-          <span>✨ 家具をタッチすると担当アプリが開きます！</span>
+        <div class="text-emerald-800 font-black text-[11px]">
+          ✨ 商品棚・レジ・自動ドアをタッチすると実務アプリや街並みが開きます！
         </div>
       </div>
 
-      <!-- 2D Room Viewport -->
-      <div id="roomViewport" class="relative w-full h-[450px] sm:h-[480px] room-floor overflow-hidden select-none">
+      <!-- 2D Conbini Viewport -->
+      <div id="roomViewport" class="relative w-full h-[500px] sm:h-[530px] conbini-floor overflow-hidden select-none">
         
-        <!-- Wall & Windows -->
-        <div class="absolute top-0 left-0 right-0 h-24 room-wall flex justify-around items-center px-10 pointer-events-none">
-          <div class="w-16 h-14 bg-sky-200 rounded-t-full border-4 border-white shadow-inner flex flex-col justify-end p-1 overflow-hidden">
-            <div class="text-sm text-center animate-bounce">☁️</div>
-          </div>
-          <div class="w-11 h-11 bg-white rounded-full border-4 border-amber-300 shadow flex items-center justify-center font-black text-amber-900 text-[11px]">
+        <!-- Back Glass Windows & Ceiling Lights -->
+        <div class="absolute top-0 left-0 right-0 h-20 conbini-wall flex justify-around items-center px-6 pointer-events-none">
+          <!-- Fluorescent Ceiling Light Bar 1 -->
+          <div class="w-28 h-3 bg-white/90 rounded-full shadow-[0_0_15px_#fff] border border-slate-200"></div>
+          <!-- Wall Clock -->
+          <div class="w-10 h-10 bg-white rounded-full border-2 border-slate-300 shadow flex items-center justify-center font-black text-slate-700 text-[10px]">
             <span id="roomWallClock">14:15</span>
           </div>
-          <div class="w-16 h-14 bg-sky-200 rounded-t-full border-4 border-white shadow-inner flex flex-col justify-end p-1 overflow-hidden">
-            <div class="text-[10px] text-center font-bold text-sky-800">福岡空</div>
-          </div>
+          <!-- Fluorescent Ceiling Light Bar 2 -->
+          <div class="w-28 h-3 bg-white/90 rounded-full shadow-[0_0_15px_#fff] border border-slate-200"></div>
         </div>
 
-        <!-- ================= FURNITURE OBJECTS (タッチでアプリ起動) ================= -->
+        <!-- ================= CONBINI OBJECTS (コンビニ什器) ================= -->
 
-        <!-- 1: 左上【事務所PC＆金庫】 -->
-        <div class="absolute top-26 left-6 sm:left-12 flex flex-col items-center furniture-shadow">
-          <div class="bg-amber-100/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
-            💻 事務所デスク（タッチで起動）
-          </div>
-          <div class="flex items-end gap-2">
-            <!-- PCデスク (タッチでシフト/スケジュール) -->
-            <div class="touchable-object w-24 h-16 bg-amber-700 rounded-xl border-2 border-amber-900 shadow-md p-1.5 flex flex-col justify-between" 
-                 onclick="touchObject('office-pc')" title="タッチしてシフト管理/ワークスケジュールを起動">
-              <div class="w-12 h-8 bg-slate-800 rounded border-2 border-slate-700 mx-auto flex items-center justify-center text-[10px] text-emerald-400 font-mono font-bold animate-pulse">
-                SHIFT
-              </div>
-              <div class="text-[8px] text-amber-200 text-center font-bold">👆 シフト起動</div>
+        <!-- 1: 左上【🚪 ガラス自動ドア（エントランス）】-->
+        <div class="absolute top-4 left-6 flex flex-col items-center">
+          <div class="touchable pulse-door w-32 h-18 bg-gradient-to-b from-sky-200/90 to-sky-100/90 rounded-2xl border-4 border-emerald-500 shadow-md p-1 flex flex-col justify-between"
+               onclick="openTownModal()" title="タッチして博多の街並み＆店舗切り替えを開く">
+            <div class="flex justify-between items-center px-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span class="text-[8px] bg-emerald-700 text-white font-black px-1.5 py-0.2 rounded-full">自動ドア</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             </div>
-            <!-- 金庫 (タッチで kinko-app) -->
-            <div class="touchable-object w-14 h-16 bg-slate-700 rounded-xl border-2 border-slate-900 shadow-md p-1 flex flex-col items-center justify-between"
-                 onclick="touchObject('safe')" title="タッチして金庫・レジ引継ぎアプリを起動">
-              <div class="w-6 h-6 rounded-full border-2 border-amber-400 bg-slate-800 flex items-center justify-center text-[9px] text-amber-400 font-bold">🔒</div>
-              <span class="text-[8px] text-amber-300 font-bold">👆 金庫</span>
+            <div class="text-center font-black text-xs text-sky-900 py-1">
+              🚪 街へ出る
+            </div>
+            <div class="text-[8px] bg-white/80 text-emerald-800 text-center font-black rounded-lg py-0.5">
+              👆 博多の街・店舗切替
             </div>
           </div>
         </div>
 
-        <!-- 2: 右上【厨房フライヤー＆チキンケース】 -->
-        <div class="absolute top-26 right-6 sm:right-12 flex flex-col items-center furniture-shadow">
-          <div class="bg-emerald-100/90 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
-            🍗 厨房ステーション（タッチで起動）
-          </div>
-          <div class="flex items-end gap-2">
-            <!-- フライヤー (タッチで FF_manage) -->
-            <div class="touchable-object w-20 h-16 bg-slate-300 rounded-xl border-2 border-slate-500 shadow-md p-1.5 flex flex-col justify-between"
-                 onclick="touchObject('fryer')" title="タッチしてFF調理・廃棄管理アプリを起動">
-              <div class="flex justify-between items-center text-[8px] font-bold text-slate-700">
-                <span>油温</span><span class="text-rose-600 font-mono">175℃</span>
-              </div>
-              <div class="w-full h-7 bg-amber-400 rounded border border-amber-600 flex items-center justify-center text-xs overflow-hidden">
-                <span class="animate-bounce">🍗 🍟</span>
-              </div>
-              <span class="text-[7px] text-center font-bold text-slate-800">👆 調理管理</span>
+        <!-- 2: 上部中央【🍱 お弁当・おにぎり・サンドイッチ オープン冷蔵ケース】-->
+        <div class="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <div class="touchable w-44 h-16 bg-slate-200 rounded-2xl border-2 border-slate-400 shadow-md p-1.5 flex flex-col justify-between"
+               onclick="touchObject('bento')" title="タッチしてお弁当・中食管理を開く">
+            <div class="flex justify-between items-center text-[8px] font-black text-slate-700">
+              <span class="bg-emerald-600 text-white px-1.5 py-0.2 rounded">中食チルド</span>
+              <span class="text-sky-700 font-mono">5℃ 冷却中</span>
             </div>
-            <!-- 保温ショーケース -->
-            <div class="touchable-object w-16 h-18 bg-amber-100 rounded-xl border-2 border-amber-400 shadow-md p-1 flex flex-col items-center justify-center text-center"
-                 onclick="touchObject('fryer')" title="タッチしてチキン仕込み・廃棄を起動">
-              <span class="text-[8px] font-black text-amber-900">名物チキン</span>
-              <span class="text-xs font-black text-emerald-700">残8個</span>
-              <span class="text-[7px] text-emerald-800 font-bold mt-1">👆 廃棄/仕込</span>
+            <div class="flex justify-around items-center text-xs py-0.5">
+              <span>🍙 おむすび</span>
+              <span>🍱 お弁当</span>
+              <span>🥪 サンド</span>
+            </div>
+            <div class="text-[8px] bg-emerald-100 text-emerald-900 text-center font-bold rounded">
+              👆 中食・値引き点検
             </div>
           </div>
         </div>
 
-        <!-- 3: 中央【陳列棚・ゴンドラ】(新規配置: shelf-review-app) -->
-        <div class="absolute top-44 left-1/2 -translate-x-1/2 flex flex-col items-center furniture-shadow">
-          <div class="touchable-object w-28 h-12 bg-amber-800 rounded-xl border-2 border-amber-950 p-1.5 flex items-center justify-around text-white shadow-md"
-               onclick="touchObject('shelf')" title="タッチして棚点検・売場レビューアプリを起動">
-            <span class="text-base">🛒</span>
-            <div class="text-left leading-tight">
-              <div class="text-[9px] font-bold">売場ゴンドラ棚</div>
-              <div class="text-[8px] text-amber-200 font-bold">👆 棚点検アプリ</div>
+        <!-- 3: 右上【🥤 ウォークイン飲料クーラー（ガラス扉冷蔵庫）】-->
+        <div class="absolute top-4 right-6 flex flex-col items-center">
+          <div class="touchable w-36 h-20 bg-sky-950 rounded-2xl border-4 border-sky-400 shadow-md p-1.5 flex flex-col justify-between text-white"
+               onclick="touchObject('drink')" title="タッチして飲料・ビール点検を開く">
+            <div class="flex justify-between items-center text-[8px] font-bold">
+              <span>ウォークイン</span>
+              <span class="text-sky-300 font-mono">3℃</span>
+            </div>
+            <div class="flex justify-around items-center text-xs py-1">
+              <span>🧃</span><span>🍵</span><span>☕</span><span>🍺</span>
+            </div>
+            <div class="text-[8px] bg-sky-800 text-sky-200 text-center font-bold rounded py-0.5">
+              👆 飲料補充・先入先出
             </div>
           </div>
         </div>
 
-        <!-- 4: 左下【レジ・切手カウンター】 -->
-        <div class="absolute bottom-6 left-6 sm:left-14 flex flex-col items-center furniture-shadow">
-          <div class="bg-sky-100/90 text-sky-900 border border-sky-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
-            🏪 レジカウンター（タッチで起動）
+        <!-- 4: 中央【🛒 売場ゴンドラ陳列棚（2列）】-->
+        <div class="absolute top-36 left-1/2 -translate-x-1/2 flex gap-4">
+          <!-- ゴンドラA (お菓子・スナック) -->
+          <div class="touchable w-32 h-14 bg-amber-800 rounded-xl border-2 border-amber-950 shadow-md p-1 flex flex-col justify-between text-white"
+               onclick="touchObject('shelf-a')" title="タッチして棚点検・売場レビューアプリを起動">
+            <div class="text-[8px] font-bold text-amber-200">1号棚: スナック・チョコ</div>
+            <div class="text-xs text-center">🍫 🍪 🍘 🍟</div>
+            <div class="text-[8px] bg-amber-950 text-amber-300 text-center font-bold rounded">
+              👆 shelf-review-app
+            </div>
           </div>
-          <div class="w-40 h-16 bg-amber-600 rounded-2xl border-2 border-amber-800 shadow-md p-1.5 flex items-center justify-between text-white">
-            <!-- POS 1 (タッチで purchase-limit) -->
-            <div class="touchable-object w-12 h-12 bg-slate-800 rounded-lg p-1 flex flex-col justify-between border border-slate-600"
+          <!-- ゴンドラB (カップ麺・加工食品) -->
+          <div class="touchable w-32 h-14 bg-amber-800 rounded-xl border-2 border-amber-950 shadow-md p-1 flex flex-col justify-between text-white"
+               onclick="touchObject('shelf-b')" title="タッチして棚点検・売場レビューアプリを起動">
+            <div class="text-[8px] font-bold text-amber-200">2号棚: カップ麺・日用品</div>
+            <div class="text-xs text-center">🍜 🥫 🧻 🧼</div>
+            <div class="text-[8px] bg-amber-950 text-amber-300 text-center font-bold rounded">
+              👆 shelf-review-app
+            </div>
+          </div>
+        </div>
+
+        <!-- 5: 左下【🏪 レジカウンター ＆ POS1・2 ＆ 切手 ＆ コーヒー】-->
+        <div class="absolute bottom-6 left-6 sm:left-10 flex flex-col items-center">
+          <div class="w-64 h-22 bg-slate-700 rounded-2xl border-4 border-slate-800 shadow-xl p-2 flex items-center justify-between text-white relative">
+            
+            <!-- POS 1 (購入制限) -->
+            <div class="touchable w-14 h-16 bg-slate-900 rounded-xl p-1 flex flex-col justify-between border border-slate-600 text-center"
                  onclick="touchObject('pos-limit')" title="タッチして購入制限管理アプリを起動">
               <div class="text-[7px] text-emerald-400 font-mono">POS 1</div>
-              <div class="text-[8px] text-center font-bold">🛑 制限</div>
+              <div class="text-base">🛑</div>
+              <div class="text-[7px] bg-rose-950 text-rose-300 font-bold rounded">購入制限</div>
             </div>
-            <!-- 切手ケース (タッチで kitte_manage) -->
-            <div class="touchable-object w-10 h-12 bg-amber-100 text-amber-900 rounded p-1 text-center border border-amber-400 flex flex-col justify-center"
+
+            <!-- 切手・金券ケース -->
+            <div class="touchable w-12 h-16 bg-amber-100 text-amber-900 rounded-xl p-1 flex flex-col justify-between border-2 border-amber-400 text-center"
                  onclick="touchObject('stamps')" title="タッチして切手・金券管理アプリを起動">
-              <span class="text-[7px] font-bold">切手</span>
-              <span class="text-xs">✉️</span>
-              <span class="text-[6px] text-rose-600 font-bold">残少</span>
+              <div class="text-[7px] font-bold">金券箱</div>
+              <div class="text-base">✉️</div>
+              <div class="text-[7px] bg-amber-200 text-amber-950 font-bold rounded">切手印紙</div>
             </div>
-            <!-- POS 2 (タッチで kinko-app) -->
-            <div class="touchable-object w-12 h-12 bg-slate-800 rounded-lg p-1 flex flex-col justify-between border border-slate-600"
-                 onclick="touchObject('safe')" title="タッチしてレジ現金点検を起動">
+
+            <!-- コーヒーマシン -->
+            <div class="touchable w-12 h-16 bg-slate-800 text-amber-400 rounded-xl p-1 flex flex-col justify-between border border-slate-600 text-center"
+                 onclick="touchObject('coffee')" title="タッチしてコーヒースキャンを開く">
+              <div class="text-[7px] text-slate-300 font-bold">珈琲機</div>
+              <div class="text-base">☕</div>
+              <div class="text-[7px] bg-amber-900 text-amber-200 font-bold rounded">スキャン</div>
+            </div>
+
+            <!-- POS 2 (金庫点検) -->
+            <div class="touchable w-14 h-16 bg-slate-900 rounded-xl p-1 flex flex-col justify-between border border-slate-600 text-center"
+                 onclick="touchObject('safe')" title="タッチして金庫・レジ引継ぎアプリを起動">
               <div class="text-[7px] text-emerald-400 font-mono">POS 2</div>
-              <div class="text-[8px] text-center font-bold">🧾 点検</div>
+              <div class="text-base">💰</div>
+              <div class="text-[7px] bg-indigo-950 text-indigo-300 font-bold rounded">レジ点検</div>
+            </div>
+
+          </div>
+          <!-- レジ前 並び位置テープ -->
+          <div class="flex gap-4 mt-1.5">
+            <div class="w-10 h-1.5 bg-yellow-400 rounded-full shadow-sm"></div>
+            <div class="w-10 h-1.5 bg-yellow-400 rounded-full shadow-sm"></div>
+          </div>
+        </div>
+
+        <!-- 6: 右下【🍳 厨房フライヤーブース ＆ 名物チキン保温ケース】-->
+        <div class="absolute bottom-6 right-6 sm:right-10 flex flex-col items-center">
+          <div class="w-56 h-22 bg-slate-300 rounded-2xl border-4 border-slate-500 shadow-xl p-2 flex items-center justify-between">
+            
+            <!-- フライヤー -->
+            <div class="touchable w-24 h-16 bg-slate-200 rounded-xl border-2 border-slate-400 p-1 flex flex-col justify-between"
+                 onclick="touchObject('fryer')" title="タッチしてFF調理・廃棄管理を起動">
+              <div class="flex justify-between items-center text-[8px] font-bold text-slate-700">
+                <span>フライヤー</span><span class="text-rose-600 font-mono">175℃</span>
+              </div>
+              <div class="text-xs text-center animate-bounce">🍗 🍟</div>
+              <div class="text-[7px] bg-rose-100 text-rose-800 text-center font-black rounded">仕込み調理</div>
+            </div>
+
+            <!-- ホット保温ショーケース -->
+            <div class="touchable w-24 h-16 bg-amber-100 rounded-xl border-2 border-amber-400 p-1 flex flex-col justify-between text-center"
+                 onclick="touchObject('fryer')" title="タッチしてチキン仕込み・廃棄を起動">
+              <div class="text-[8px] font-black text-amber-900">ゆだやチキン</div>
+              <div class="text-xs font-black text-emerald-700">残 8 個</div>
+              <div class="text-[7px] bg-amber-200 text-amber-950 font-black rounded">廃棄ログ登録</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 7: 画面中央奥【💻 事務所PCデスク ＆ 金庫】-->
+        <div class="absolute top-22 left-10 flex items-center gap-1.5">
+          <div class="touchable w-20 h-12 bg-amber-700 rounded-xl border-2 border-amber-900 shadow p-1 flex flex-col justify-between"
+               onclick="touchObject('office-pc')" title="タッチしてシフト管理/ワークスケジュールを起動">
+            <div class="w-10 h-6 bg-slate-800 rounded border border-slate-600 mx-auto flex items-center justify-center text-[8px] text-emerald-400 font-mono font-bold animate-pulse">
+              SHIFT
+            </div>
+            <div class="text-[7px] text-amber-100 text-center font-bold">事務所PC</div>
+          </div>
+          <div class="touchable w-12 h-12 bg-slate-700 rounded-xl border-2 border-slate-900 shadow p-1 flex flex-col items-center justify-between"
+               onclick="touchObject('safe')" title="タッチして金庫在高アプリを起動">
+            <span class="text-xs">🔒</span>
+            <span class="text-[7px] text-amber-300 font-bold">金庫</span>
+          </div>
+        </div>
+
+        <!-- 8: 画面中央右寄り【🍵 じい君の和風畳コーナー（イートイン）】-->
+        <div class="absolute top-22 right-10 flex items-center">
+          <div class="touchable w-28 h-12 bg-emerald-100 rounded-xl border-2 border-amber-600 shadow p-1 flex items-center justify-around"
+               onclick="touchObject('breakroom')" title="タッチして店舗連絡板・フィードバックを起動">
+            <span class="text-xs">🍵</span>
+            <div class="text-left leading-tight">
+              <div class="text-[8px] font-bold text-amber-950">じい君縁側</div>
+              <div class="text-[7px] text-emerald-800 font-bold">👆 店舗連絡板</div>
             </div>
           </div>
         </div>
 
-        <!-- 5: 右下【じい君の縁側・休憩室】 -->
-        <div class="absolute bottom-6 right-6 sm:right-14 flex flex-col items-center furniture-shadow">
-          <div class="bg-amber-100/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 shadow-sm">
-            🍵 じい君の縁側（タッチで起動）
-          </div>
-          <div class="w-36 h-20 bg-emerald-100 rounded-2xl border-4 border-amber-600 shadow-md p-2 relative flex items-center justify-around">
-            <div class="w-12 h-12 bg-indigo-500 rounded-lg shadow-inner border border-indigo-700 flex items-center justify-center">
-              <span class="text-[10px] text-white font-bold">座布団</span>
-            </div>
-            <!-- ちゃぶ台 (タッチで store-communication / store-feedback) -->
-            <div class="touchable-object w-14 h-14 bg-amber-800 rounded-full border-2 border-amber-950 flex flex-col items-center justify-center shadow"
-                 onclick="touchObject('breakroom')" title="タッチして店舗連絡板・フィードバックを起動">
-              <span class="text-[11px]">🍵</span>
-              <span class="text-[7px] text-amber-100 font-bold">👆 連絡板</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================= AVATARS ================= -->
+        <!-- ================= 4 DYNAMIC ANIMAL AVATARS ================= -->
         <div id="avatar-manager" class="absolute transition-all duration-700 ease-out z-20 flex flex-col items-center cursor-pointer" onclick="speakAvatar('manager')">
           <div id="bubble-manager" class="hidden mb-1 pop-bubble bg-white px-2.5 py-1 rounded-2xl border-2 border-sky-400 text-[11px] font-black shadow whitespace-nowrap">
             <span id="text-manager">シフト作成中！</span>
@@ -348,45 +418,28 @@
 
       </div>
 
-      <!-- Quick Command Bar -->
-      <div class="bg-amber-100/60 p-3 sm:p-4 border-t-2 border-amber-200 flex flex-col gap-2">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <button onclick="orderAgent('kitchen', 'kitchen', 'ゆだやチキン仕込み開始！'); openAppModal('FF_manage', 'FF調理・廃棄管理アプリ')" class="px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-800 rounded-2xl border-2 border-emerald-400 font-black shadow-sm flex items-center justify-center gap-1.5">
-            <span>🍗</span><span>チキン調理管理 起動</span>
-          </button>
-          <button onclick="orderAgent('register', 'counter', '金庫在高を点検します！'); openAppModal('kinko-app', '金庫・レジ引継ぎアプリ')" class="px-3 py-2 bg-white hover:bg-indigo-50 text-indigo-800 rounded-2xl border-2 border-indigo-400 font-black shadow-sm flex items-center justify-center gap-1.5">
-            <span>💰</span><span>金庫点検 起動</span>
-          </button>
-          <button onclick="orderAgent('manager', 'office', 'シフト最適化を開きます！'); openAppModal('shift-management-app', 'シフト管理アプリ')" class="px-3 py-2 bg-white hover:bg-sky-50 text-sky-800 rounded-2xl border-2 border-sky-400 font-black shadow-sm flex items-center justify-center gap-1.5">
-            <span>📋</span><span>シフト管理 起動</span>
-          </button>
-          <button onclick="orderAgent('jiikun', 'breakroom', '店舗連絡板を確認するぞい！'); openAppModal('store-communication-app', '店舗コミュニケーション')" class="px-3 py-2 bg-white hover:bg-amber-50 text-amber-900 rounded-2xl border-2 border-amber-400 font-black shadow-sm flex items-center justify-center gap-1.5">
-            <span>🍵</span><span>店舗連絡板 起動</span>
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- 2. 下部：タスク進捗掲示板（カンバン） & インカム -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-8 bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-4 flex flex-col">
-        <div class="flex items-center justify-between pb-3 border-b-2 border-amber-100 mb-3">
-          <div class="font-black text-sm text-amber-950">📌 タスク進捗掲示板（カンバン）</div>
+      <div class="lg:col-span-8 bg-white rounded-3xl border-4 border-slate-300 shadow-lg p-4 flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b-2 border-slate-100 mb-3">
+          <div class="font-black text-sm text-slate-800">📌 タスク進捗掲示板（カンバン）</div>
           <span class="text-xs bg-rose-100 text-rose-800 font-black px-3 py-1 rounded-full border border-rose-300">
             代表承認待ち: <strong id="kanbanPendingBadge">2</strong> 件
           </span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 overflow-x-auto pb-2">
-          <div class="bg-amber-50/70 rounded-2xl p-2 border-2 border-amber-200 min-h-[280px]"><div class="font-black text-xs text-amber-800 mb-2 pb-1 border-b">未着手</div><div id="col-todo" class="space-y-2"></div></div>
-          <div class="bg-sky-50/70 rounded-2xl p-2 border-2 border-sky-200 min-h-[280px]"><div class="font-black text-xs text-sky-800 mb-2 pb-1 border-b">実施中</div><div id="col-progress" class="space-y-2"></div></div>
-          <div class="bg-yellow-50/70 rounded-2xl p-2 border-2 border-yellow-300 min-h-[280px]"><div class="font-black text-xs text-yellow-900 mb-2 pb-1 border-b">点検中</div><div id="col-review" class="space-y-2"></div></div>
-          <div class="bg-rose-50/90 rounded-2xl p-2 border-2 border-rose-300 min-h-[280px]"><div class="font-black text-xs text-rose-800 mb-2 pb-1 border-b">要 代表承認</div><div id="col-approval" class="space-y-2"></div></div>
-          <div class="bg-emerald-50/70 rounded-2xl p-2 border-2 border-emerald-200 min-h-[280px]"><div class="font-black text-xs text-emerald-800 mb-2 pb-1 border-b">完了</div><div id="col-done" class="space-y-2"></div></div>
+          <div class="bg-slate-50 rounded-2xl p-2 border border-slate-200 min-h-[260px]"><div class="font-black text-xs text-slate-600 mb-2 pb-1 border-b">未着手</div><div id="col-todo" class="space-y-2"></div></div>
+          <div class="bg-sky-50 rounded-2xl p-2 border border-sky-200 min-h-[260px]"><div class="font-black text-xs text-sky-800 mb-2 pb-1 border-b">実施中</div><div id="col-progress" class="space-y-2"></div></div>
+          <div class="bg-yellow-50 rounded-2xl p-2 border border-yellow-300 min-h-[260px]"><div class="font-black text-xs text-yellow-900 mb-2 pb-1 border-b">点検中</div><div id="col-review" class="space-y-2"></div></div>
+          <div class="bg-rose-50 rounded-2xl p-2 border border-rose-300 min-h-[260px]"><div class="font-black text-xs text-rose-800 mb-2 pb-1 border-b">要 代表承認</div><div id="col-approval" class="space-y-2"></div></div>
+          <div class="bg-emerald-50 rounded-2xl p-2 border border-emerald-200 min-h-[260px]"><div class="font-black text-xs text-emerald-800 mb-2 pb-1 border-b">完了</div><div id="col-done" class="space-y-2"></div></div>
         </div>
       </div>
 
-      <div class="lg:col-span-4 bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-4 flex flex-col h-[360px]">
-        <div class="flex items-center justify-between pb-2 border-b-2 border-amber-100 mb-2 font-black text-sm text-amber-950">
+      <div class="lg:col-span-4 bg-white rounded-3xl border-4 border-slate-300 shadow-lg p-4 flex flex-col h-[340px]">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-slate-100 mb-2 font-black text-sm text-slate-800">
           <span>📻 店内インカム＆思考ログ</span>
         </div>
         <div id="intercomChatBox" class="flex-1 overflow-y-auto space-y-2 text-xs"></div>
@@ -395,175 +448,104 @@
 
   </main>
 
-  <!-- ================= MODAL: 12-APP SHELF (自作アプリ棚 カタログ) ================= -->
-  <div id="launcherModal" class="fixed inset-0 bg-amber-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-5">
-    <div class="bg-white rounded-3xl shadow-2xl border-4 border-amber-400 max-w-5xl w-full h-[88vh] flex flex-col overflow-hidden">
+  <!-- ================= MODAL: 博多の街並み＆店舗切り替え (HAKATA TOWN VIEW) ================= -->
+  <div id="townModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-sky-500 max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in duration-150">
       
-      <!-- Shelf Header -->
-      <div class="px-6 py-3.5 bg-amber-500 text-amber-950 flex items-center justify-between border-b-2 border-amber-600">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">🧰</span>
+      <!-- Town Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-sky-600 via-sky-500 to-emerald-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shadow-inner">
+            🏙️
+          </div>
           <div>
-            <h3 class="font-black text-base">株式会社ゆだや 自作アプリ統合棚（全12アプリ）</h3>
-            <p class="text-[11px] text-amber-900">カードをタッチするとvcvの画面内でそのまま起動します</p>
+            <h3 class="font-black text-base">福岡・博多の街並み ＆ ゆだや店舗ネットワーク</h3>
+            <p class="text-xs text-sky-100">周辺リアルタイム情報 ＆ 運営店舗切り替え</p>
           </div>
         </div>
-        <button onclick="closeLauncherModal()" class="text-3xl font-black text-amber-950 hover:text-white transition">&times;</button>
+        <button onclick="closeTownModal()" class="text-3xl font-black text-white hover:text-sky-200 transition">&times;</button>
       </div>
 
-      <!-- App Grid (12 Apps) -->
-      <div class="flex-1 bg-amber-50/50 p-5 overflow-y-auto space-y-5">
+      <!-- Town Body -->
+      <div class="p-6 space-y-5 bg-slate-50 text-xs">
         
-        <!-- Category 1: 人事・労務・マネジメント -->
-        <div>
-          <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <span>💻 事務所・マネジメント</span><span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">4アプリ</span>
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('shift-management-app', 'シフト管理アプリ')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">📅</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">シフト管理アプリ</h5>
-                <p class="text-[10px] text-slate-500 mt-1">希望集計・コマ割り・人件費シミュレーション</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
+        <!-- Live City Info Card -->
+        <div class="bg-white p-4 rounded-2xl border-2 border-sky-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">🌤️</span>
+            <div>
+              <div class="font-black text-slate-800 text-sm">福岡市 博多・中央エリア</div>
+              <div class="text-slate-500">晴れ 24℃ • 降水確率 10% • 湿度 55%</div>
             </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('work_schedule', 'ワークスケジュール')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">⏱️</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">ワークスケジュール</h5>
-                <p class="text-[10px] text-slate-500 mt-1">時間帯別の作業割り当て・タイムテーブル</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-center">
+              <span class="text-[10px] text-amber-700 block font-bold">チキン需要指数</span>
+              <strong class="text-xs text-amber-900 font-black">高（晴天・外出増）</strong>
             </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('kintai_error_feedback', '勤怠エラーフィードバック')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">⚠️</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">勤怠エラーフィードバック</h5>
-                <p class="text-[10px] text-slate-500 mt-1">打刻漏れ・遅刻早退の自動検知＆修正</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('incentive-board', 'インセンティブボード')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">🏆</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">インセンティブボード</h5>
-                <p class="text-[10px] text-slate-500 mt-1">スタッフの成果可視化・モチベーション向上</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
+            <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-center">
+              <span class="text-[10px] text-emerald-700 block font-bold">住吉通り人通り</span>
+              <strong class="text-xs text-emerald-900 font-black">通常より +12%</strong>
             </div>
           </div>
         </div>
 
-        <!-- Category 2: 会計・レジカウンター -->
-        <div>
-          <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <span>🏪 レジ・金券カウンター</span><span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">3アプリ</span>
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('kinko-app', '金庫・レジ引継ぎアプリ')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">💰</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">金庫・レジ引継ぎアプリ</h5>
-                <p class="text-[10px] text-slate-500 mt-1">レジ釣銭点検（15万）・金庫在高照合・違算ゼロ</p>
+        <!-- 2 店舗カード切り替え -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- 店舗 1: 博多住吉通り店 -->
+          <div id="cardStoreHakata" class="p-4 rounded-2xl border-3 border-emerald-500 bg-emerald-50/70 shadow-md flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[10px]">現在稼働中</span>
+                <span class="text-[10px] text-slate-500 font-mono">Store #01</span>
               </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('kitte_manage', '切手・金券管理アプリ')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">✉️</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">切手・金券管理アプリ</h5>
-                <p class="text-[10px] text-slate-500 mt-1">切手・印紙・レターパック棚卸と適正在庫アラート</p>
+              <h4 class="font-black text-base text-slate-800 mt-1">博多住吉通り店</h4>
+              <p class="text-slate-600 mt-1 leading-relaxed">
+                📍 福岡市博多区住吉2丁目<br>
+                住吉通り沿い・キャナルシティ近く。昼ピーク・観光・通勤客の多い旗艦店舗。
+              </p>
+              <div class="mt-2 text-[11px] font-bold text-emerald-800">
+                稼働: 4エージェント稼働中 / レジ点検済 / チキン残8個
               </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
             </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('purchase-limit', '購入制限管理アプリ')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">🛑</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">購入制限管理アプリ</h5>
-                <p class="text-[10px] text-slate-500 mt-1">個数制限商品・販売ルールチェック</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
+            <button onclick="selectStoreFromTown('hakata')" class="w-full py-2 bg-emerald-600 text-white font-black rounded-xl text-xs shadow hover:bg-emerald-700 transition">
+              この店舗の店内に留まる
+            </button>
           </div>
-        </div>
 
-        <!-- Category 3: 厨房・商品・売場 -->
-        <div>
-          <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <span>🍗 厨房・商品・売場点検</span><span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">2アプリ</span>
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('FF_manage', 'FF調理・廃棄管理アプリ')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">🍗</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">FF調理・廃棄管理アプリ</h5>
-                <p class="text-[10px] text-slate-500 mt-1">名物チキンの仕込み数・油温・廃棄ログ記録</p>
+          <!-- 店舗 2: 福岡清川二丁目店 -->
+          <div id="cardStoreKiyokawa" class="p-4 rounded-2xl border-2 border-slate-300 bg-white shadow-sm hover:border-sky-500 transition flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px]">待機中</span>
+                <span class="text-[10px] text-slate-500 font-mono">Store #02</span>
               </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('shelf-review-app', '棚点検・売場レビュー')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">🛒</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">棚点検・売場レビュー</h5>
-                <p class="text-[10px] text-slate-500 mt-1">棚割り・フェイスアップ・売場点検記録</p>
+              <h4 class="font-black text-base text-slate-800 mt-1">福岡清川二丁目店</h4>
+              <p class="text-slate-600 mt-1 leading-relaxed">
+                📍 福岡市中央区清川2丁目<br>
+                日赤通り・百年橋通り近く。住宅・ビジネス混在エリアで夜勤帯需要も高い拠点。
+              </p>
+              <div class="mt-2 text-[11px] font-bold text-sky-800">
+                稼働: シフト正常 / 金庫在高一致 / 夜勤準備中
               </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
             </div>
+            <button onclick="selectStoreFromTown('kiyokawa')" class="w-full py-2 bg-sky-600 text-white font-black rounded-xl text-xs shadow hover:bg-sky-700 transition">
+              福岡清川二丁目店の店内に移動する ➔
+            </button>
           </div>
-        </div>
 
-        <!-- Category 4: コミュニケーション・店舗分析 -->
-        <div>
-          <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <span>🍵 縁側・店舗分析</span><span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">3アプリ</span>
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('store-communication-app', '店舗コミュニケーション')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">💬</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">店舗コミュニケーション</h5>
-                <p class="text-[10px] text-slate-500 mt-1">スタッフ連絡板・引継ぎデジタル回覧板</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('store-feedback', '店舗フィードバック')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">📋</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">店舗フィードバック</h5>
-                <p class="text-[10px] text-slate-500 mt-1">巡回指摘・現場改善提案・フィードバック</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-
-            <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm transition flex flex-col justify-between cursor-pointer" onclick="openAppModal('bunseki-tool', '店舗分析ツール')">
-              <div>
-                <div class="flex items-center justify-between"><span class="text-2xl">📊</span><span class="text-[9px] bg-slate-100 px-1.5 rounded font-mono">Live</span></div>
-                <h5 class="font-black text-xs text-slate-800 mt-2">店舗分析ツール</h5>
-                <p class="text-[10px] text-slate-500 mt-1">売上・人件費率・時間帯別データの統合分析</p>
-              </div>
-              <button class="mt-3 w-full py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-black">アプリ起動</button>
-            </div>
-          </div>
         </div>
 
       </div>
+
     </div>
   </div>
 
   <!-- ================= MODAL: INLINE APP VIEWER (アプリ実行画面) ================= -->
-  <div id="appViewerModal" class="fixed inset-0 bg-amber-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4">
+  <div id="appViewerModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white rounded-3xl shadow-2xl border-4 border-emerald-500 max-w-6xl w-full h-[92vh] flex flex-col overflow-hidden">
-      
-      <!-- Viewer Toolbar -->
-      <div class="px-5 py-3 bg-emerald-700 text-white flex items-center justify-between border-b-2 border-emerald-800">
+      <div class="px-5 py-3 bg-emerald-700 text-white flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-xl" id="activeAppIcon">📱</span>
           <div>
@@ -576,74 +558,91 @@
             <span>別タブで開く</span>
             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
           </a>
-          <button onclick="closeAppModal()" class="w-8 h-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center text-lg font-black transition">
-            &times;
-          </button>
+          <button onclick="closeAppModal()" class="w-8 h-8 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white flex items-center justify-center text-lg font-black transition">&times;</button>
         </div>
       </div>
-
-      <!-- Iframe Container -->
       <div class="flex-1 bg-slate-100 relative">
         <iframe id="appIframe" src="" class="w-full h-full border-0"></iframe>
       </div>
-
     </div>
   </div>
 
-  <!-- ================= MODAL: APPROVAL WITH STAMP ================= -->
-  <div id="approvalModal" class="fixed inset-0 bg-amber-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl border-4 border-rose-400 max-w-lg w-full overflow-hidden">
-      <div class="bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-white flex items-center justify-between">
-        <h3 class="font-black text-base">💮 代表承認ゲーティング (Human-in-the-Loop)</h3>
-        <button onclick="closeApprovalModal()" class="text-2xl font-bold">&times;</button>
+  <!-- ================= MODAL: 12-APP SHELF ================= -->
+  <div id="launcherModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-amber-400 max-w-5xl w-full h-[88vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-3.5 bg-amber-500 text-amber-950 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧰</span>
+          <h3 class="font-black text-base">株式会社ゆだや 自作アプリ統合棚（全12アプリ）</h3>
+        </div>
+        <button onclick="closeLauncherModal()" class="text-3xl font-black text-amber-950">&times;</button>
       </div>
-      <div class="p-5 space-y-3 text-xs" id="approvalModalContent"></div>
-      <div class="bg-amber-50 px-5 py-3.5 border-t-2 border-amber-100 flex justify-between">
-        <button onclick="rejectCurrentTask()" class="px-4 py-2 border-2 border-slate-300 text-slate-700 font-black rounded-xl">↩️ 修正指示</button>
-        <button onclick="approveCurrentTask()" class="px-5 py-2.5 bg-rose-600 text-white font-black rounded-xl shadow">💮 承認印を押して確定！</button>
+      <div class="flex-1 bg-amber-50/50 p-5 overflow-y-auto space-y-4 text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button onclick="openAppModal('shift-management-app', 'シフト管理アプリ')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">📅</span><div class="font-black mt-1">シフト管理アプリ</div>
+          </button>
+          <button onclick="openAppModal('work_schedule', 'ワークスケジュール')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">⏱️</span><div class="font-black mt-1">ワークスケジュール</div>
+          </button>
+          <button onclick="openAppModal('kintai_error_feedback', '勤怠エラーフィードバック')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">⚠️</span><div class="font-black mt-1">勤怠エラーフィードバック</div>
+          </button>
+          <button onclick="openAppModal('incentive-board', 'インセンティブボード')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">🏆</span><div class="font-black mt-1">インセンティブボード</div>
+          </button>
+          <button onclick="openAppModal('kinko-app', '金庫・レジ引継ぎアプリ')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">💰</span><div class="font-black mt-1">金庫・レジ引継ぎ</div>
+          </button>
+          <button onclick="openAppModal('kitte_manage', '切手・金券管理アプリ')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">✉️</span><div class="font-black mt-1">切手・金券管理</div>
+          </button>
+          <button onclick="openAppModal('purchase-limit', '購入制限管理アプリ')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">🛑</span><div class="font-black mt-1">購入制限管理</div>
+          </button>
+          <button onclick="openAppModal('FF_manage', 'FF調理・廃棄管理アプリ')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">🍗</span><div class="font-black mt-1">FF調理・廃棄管理</div>
+          </button>
+          <button onclick="openAppModal('shelf-review-app', '棚点検・売場レビュー')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">🛒</span><div class="font-black mt-1">棚点検・売場レビュー</div>
+          </button>
+          <button onclick="openAppModal('store-communication-app', '店舗コミュニケーション')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">💬</span><div class="font-black mt-1">店舗連絡板</div>
+          </button>
+          <button onclick="openAppModal('store-feedback', '店舗フィードバック')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">📋</span><div class="font-black mt-1">店舗フィードバック</div>
+          </button>
+          <button onclick="openAppModal('bunseki-tool', '店舗分析ツール')" class="p-3 bg-white rounded-2xl border-2 border-amber-200 hover:border-emerald-500 shadow-sm text-left">
+            <span class="text-2xl">📊</span><div class="font-black mt-1">店舗分析ツール</div>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- FIREBASE AUTH & LOGIC -->
-  <script type="module">
-    import { auth, provider, signInWithPopup, signOut, onAuthStateChanged, db, collection, onSnapshot, setDoc, doc } from './src/firebase-config.js';
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        document.getElementById('loginBtn').classList.add('hidden');
-        document.getElementById('userProfile').classList.remove('hidden');
-        document.getElementById('userName').innerText = user.displayName || '湯田 恭平 代表';
-        document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 animate-pulse';
-        document.getElementById('modeBadge').innerText = '🔥 本番Live同期中 (ゆだやDB)';
-      } else {
-        document.getElementById('loginBtn').classList.remove('hidden');
-        document.getElementById('userProfile').classList.add('hidden');
-        document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300';
-        document.getElementById('modeBadge').innerText = '🌱 デモ体験中';
-      }
-    });
-
-    window.handleLogin = async () => { try { await signInWithPopup(auth, provider); } catch(e){} };
-    window.handleLogout = async () => { await signOut(auth); location.reload(); };
-  </script>
-
-  <!-- APP INTERACTION & TOUCH ENGINE -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    const stationCoords = { office: { x: 18, y: 35 }, kitchen: { x: 78, y: 35 }, counter: { x: 22, y: 70 }, breakroom: { x: 78, y: 70 }, shelf: { x: 50, y: 45 } };
-    const avatars = {
-      manager: { id: 'manager', name: '店長AI', currentX: 18, currentY: 35, elementId: 'avatar-manager' },
-      kitchen: { id: 'kitchen', name: '厨房AI', currentX: 78, currentY: 35, elementId: 'avatar-kitchen' },
-      register: { id: 'register', name: 'リーダーAI', currentX: 22, currentY: 70, elementId: 'avatar-register' },
-      jiikun: { id: 'jiikun', name: 'じい君', currentX: 78, currentY: 70, elementId: 'avatar-jiikun' }
+    let currentStore = 'hakata';
+
+    // 什器ステーション座標（コンビニ店内配置）
+    const stationCoords = {
+      door: { x: 12, y: 18 },       // 自動ドア
+      bento: { x: 50, y: 20 },      // お弁当オープンケース
+      drink: { x: 84, y: 18 },      // ウォークイン飲料
+      shelfA: { x: 42, y: 38 },     // 1号ゴンドラ棚
+      shelfB: { x: 58, y: 38 },     // 2号ゴンドラ棚
+      counter: { x: 25, y: 72 },    // レジカウンター
+      kitchen: { x: 80, y: 72 },    // 厨房フライヤー
+      office: { x: 15, y: 25 },     // 事務所PC
+      breakroom: { x: 82, y: 25 }   // じい君縁側
     };
 
-    window.tasks = [
-      { id: 'T-101', title: '翌週シフト希望集計と最適コマ割り策定', assignee: 'manager', station: 'office', status: 'approval', summary: '昼ピーク3名配置のシフト案を作成。人件費予算比97.4%', diff: '+2名補強 (金曜夜間)', dbTarget: 'ゆだやシフトDB' },
-      { id: 'T-102', title: '14:00 レジ交代・釣銭準備金＆金庫在高点検', assignee: 'register', station: 'counter', status: 'approval', summary: '日中交代のレジ点検完了。違算0円。', diff: '金庫在高: ¥482,000 (一致)', dbTarget: 'ゆだや金庫DB' },
-      { id: 'T-103', title: 'ランチピーク前 ゆだや名物チキン仕込み', assignee: 'kitchen', station: 'kitchen', status: 'progress', summary: '骨なしチキン24個・スパイシー16個仕込み中。', diff: '推奨調理数: 40個', dbTarget: 'ゆだやFF管理' },
-      { id: 'T-104', title: '切手・収入印紙・レターパック棚卸', assignee: 'register', station: 'counter', status: 'review', summary: 'レターパックライト残4枚（発注推奨）。', diff: '発注要請: 20部', dbTarget: '金券在庫管理' }
-    ];
+    const avatars = {
+      manager: { id: 'manager', name: '店長AI', currentX: 15, currentY: 25, elementId: 'avatar-manager' },
+      kitchen: { id: 'kitchen', name: '厨房AI', currentX: 80, currentY: 72, elementId: 'avatar-kitchen' },
+      register: { id: 'register', name: 'リーダーAI', currentX: 25, currentY: 72, elementId: 'avatar-register' },
+      jiikun: { id: 'jiikun', name: 'じい君', currentX: 82, currentY: 25, elementId: 'avatar-jiikun' }
+    };
 
     window.addEventListener('DOMContentLoaded', () => {
       placeAvatars();
@@ -665,33 +664,58 @@
       });
     }
 
-    // ================= オブジェクトタッチでアプリ起動！ =================
+    // ================= コンビニ什器タッチインタラクション =================
     window.touchObject = function(type) {
       if (type === 'office-pc') {
-        moveAvatar('manager', 'office', 'シフト管理アプリを起動します！');
+        moveAvatar('manager', 'office', 'シフト管理アプリを開きます！');
         openAppModal('shift-management-app', 'シフト管理アプリ');
       } else if (type === 'safe') {
-        moveAvatar('register', 'counter', '金庫・レジ在高アプリを起動します！');
+        moveAvatar('register', 'counter', '金庫・レジ在高点検を開きます！');
         openAppModal('kinko-app', '金庫・レジ引継ぎアプリ');
       } else if (type === 'fryer') {
-        moveAvatar('kitchen', 'kitchen', 'FF調理・廃棄管理を起動します！');
+        moveAvatar('kitchen', 'kitchen', 'FF調理・廃棄管理を開きます！');
         openAppModal('FF_manage', 'FF調理・廃棄管理アプリ');
-      } else if (type === 'shelf') {
-        moveAvatar('kitchen', 'shelf', '売場・棚点検アプリを起動します！');
+      } else if (type === 'shelf-a' || type === 'shelf-b') {
+        moveAvatar('kitchen', type === 'shelf-a' ? 'shelfA' : 'shelfB', '売場・棚点検レビューを開きます！');
         openAppModal('shelf-review-app', '棚点検・売場レビュー');
       } else if (type === 'stamps') {
-        moveAvatar('register', 'counter', '切手・金券管理アプリを起動します！');
+        moveAvatar('register', 'counter', '切手・金券管理を開きます！');
         openAppModal('kitte_manage', '切手・金券管理アプリ');
       } else if (type === 'pos-limit') {
-        moveAvatar('register', 'counter', '購入制限管理アプリを起動します！');
+        moveAvatar('register', 'counter', '購入制限管理を開きます！');
         openAppModal('purchase-limit', '購入制限管理アプリ');
+      } else if (type === 'coffee') {
+        moveAvatar('register', 'counter', 'コーヒースキャン補助を開きます！');
+        alert('☕ コーヒースキャン補助パネル（サイズ別バーコード）を展開しました。');
+      } else if (type === 'bento') {
+        moveAvatar('kitchen', 'bento', '中食お弁当・値引き点検を開きます！');
+        alert('🍱 中食オープンケース点検（今後: 値引きシール判定アプリへ接続予定）');
+      } else if (type === 'drink') {
+        moveAvatar('kitchen', 'drink', 'ウォークイン飲料クーラー補充点検！');
+        alert('🥤 ウォークイン飲料クーラー（先入先出・補充点検）');
       } else if (type === 'breakroom') {
         moveAvatar('jiikun', 'breakroom', '店舗連絡板を開くぞい！');
         openAppModal('store-communication-app', '店舗コミュニケーション');
       }
     };
 
-    // ================= インラインアプリビューアの開閉 =================
+    // ================= 博多の街並み＆店舗切り替えモーダル =================
+    window.openTownModal = function() { document.getElementById('townModal').classList.remove('hidden'); };
+    window.closeTownModal = function() { document.getElementById('townModal').classList.add('hidden'); };
+
+    window.selectStoreFromTown = function(store) {
+      currentStore = store;
+      closeTownModal();
+      const isHakata = store === 'hakata';
+      document.getElementById('headerStoreName').innerText = isHakata ? '博多住吉通り店' : '福岡清川二丁目店';
+      document.getElementById('roomStoreTitle').innerText = isHakata ? '博多住吉通り店：店内リアルタイムフロア' : '福岡清川二丁目店：店内リアルタイムフロア';
+      
+      // 店長が自動ドアまでお迎えに行く演出！
+      moveAvatar('manager', 'door', `${isHakata ? '博多住吉通り店' : '福岡清川二丁目店'}へようこそ！`);
+      addChat('manager', `店舗ビューを【${isHakata ? '博多住吉通り店' : '福岡清川二丁目店'}】へ切り替えました。`);
+    };
+
+    // ================= アプリインライン表示 =================
     window.openAppModal = function(repoName, appTitle) {
       const url = `https://yuda890201.github.io/${repoName}/`;
       document.getElementById('activeAppTitle').innerText = appTitle;
@@ -700,7 +724,6 @@
       document.getElementById('appIframe').src = url;
       document.getElementById('appViewerModal').classList.remove('hidden');
     };
-
     window.closeAppModal = function() {
       document.getElementById('appViewerModal').classList.add('hidden');
       document.getElementById('appIframe').src = '';
@@ -737,83 +760,44 @@
 
     window.speakAvatar = function(avatarId) {
       const lines = {
-        manager: ['「湯田代表、家具をタッチすると実務アプリが開きますよ！」'],
-        kitchen: ['「チキン揚げや棚点検アプリ、いつでも使えます！」'],
-        register: ['「レジや金庫をタッチすると金銭点検が始まります！」'],
-        jiikun: ['「ちゃぶ台をタッチするとみんなの連絡板が見れるぞい。」']
+        manager: ['「自動ドアを押すと、博多の街並みと店舗切替ができますよ！」'],
+        kitchen: ['「お弁当ケースやフライヤーをタッチすると商品管理が開きます！」'],
+        register: ['「POSレジや切手箱をタッチすると点検がスタートします！」'],
+        jiikun: ['「外はええ天気じゃのう。自動ドアから博多の街が見えるぞい。」']
       };
       const p = lines[avatarId][0];
       showBubble(avatarId, p); addChat(avatarId, p);
     };
 
-    window.orderAgent = function(avatarId, stationKey, speech) { moveAvatar(avatarId, stationKey, speech); };
-
     function renderKanban() {
       const cols = { todo: document.getElementById('col-todo'), progress: document.getElementById('col-progress'), review: document.getElementById('col-review'), approval: document.getElementById('col-approval'), done: document.getElementById('col-done') };
       Object.values(cols).forEach(c => c.innerHTML = '');
       let pending = 0;
-      window.tasks.forEach(t => {
+      const sampleTasks = [
+        { id: 'T-101', title: '翌週シフト希望集計と最適コマ割り策定', assignee: 'manager', status: 'approval', summary: '昼ピーク3名配置のシフト案作成。予算比97.4%' },
+        { id: 'T-102', title: '14:00 レジ交代・釣銭準備金点検', assignee: 'register', status: 'approval', summary: 'レジ点検完了。違算0円。金庫在高一致。' },
+        { id: 'T-103', title: 'ランチピーク前 チキン仕込み', assignee: 'kitchen', status: 'progress', summary: '博多晴天(24℃)需要増予測により24個仕込み中。' }
+      ];
+      sampleTasks.forEach(t => {
         if (t.status === 'approval') pending++;
         const col = cols[t.status];
         if (!col) return;
         const card = document.createElement('div');
-        const isApproval = t.status === 'approval';
-        card.className = `p-2.5 rounded-xl border-2 text-xs flex flex-col gap-1 transition ${isApproval ? 'bg-rose-50 border-rose-400 pulse-border' : 'bg-white border-amber-200 shadow-sm'}`;
+        card.className = 'p-2.5 rounded-xl border text-xs bg-white border-slate-200 shadow-sm';
         card.innerHTML = `
-          <div class="flex justify-between font-bold text-[10px] text-amber-800"><span>${avatars[t.assignee] ? avatars[t.assignee].name : 'AI'}</span><span>${t.id}</span></div>
-          <div class="font-black text-slate-800 leading-tight">${t.title}</div>
-          <div class="text-[11px] text-slate-500">${t.summary}</div>
-          <div class="flex justify-end pt-1">
-            ${isApproval ? `<button onclick="openApprovalModal('${t.id}')" class="px-2 py-0.5 bg-rose-600 text-white font-black rounded-lg text-[10px]">💮 承認判定</button>` : `<button onclick="advanceTask('${t.id}')" class="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold rounded-lg text-[10px]">進める →</button>`}
-          </div>
+          <div class="flex justify-between font-bold text-[10px] text-slate-500"><span>${avatars[t.assignee].name}</span><span>${t.id}</span></div>
+          <div class="font-black text-slate-800 leading-tight mt-1">${t.title}</div>
+          <div class="text-[11px] text-slate-500 mt-1">${t.summary}</div>
         `;
         col.appendChild(card);
       });
       document.getElementById('kanbanPendingBadge').innerText = pending;
     }
 
-    window.advanceTask = function(id) {
-      const t = window.tasks.find(x => x.id === id);
-      if (!t) return;
-      if (t.status === 'todo') { t.status = 'progress'; moveAvatar(t.assignee, t.station, `【${t.title}】に着手！`); }
-      else if (t.status === 'progress') { t.status = 'review'; }
-      else if (t.status === 'review') { t.status = 'approval'; moveAvatar('manager', 'office', '湯田代表、承認をお願いします！'); }
-      renderKanban();
-    };
-
-    window.openApprovalModal = function(id) {
-      const t = window.tasks.find(x => x.id === id);
-      if (!t) return;
-      document.getElementById('approvalModalContent').innerHTML = `
-        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
-          <span class="text-rose-600 font-black text-[10px]">要 代表承認</span>
-          <h4 class="font-bold text-slate-800 mt-1">${t.title}</h4>
-          <p class="text-slate-600 mt-1">${t.summary}</p>
-        </div>
-        <div class="p-3 bg-white rounded-xl border border-rose-200">
-          <div class="font-bold text-rose-800 text-[11px]">差分: ${t.diff}</div>
-          <div class="text-[10px] text-sky-700 font-bold mt-1">更新対象: ${t.dbTarget}</div>
-        </div>
-      `;
-      document.getElementById('approvalModal').classList.remove('hidden');
-    };
-
-    window.closeApprovalModal = function() { document.getElementById('approvalModal').classList.add('hidden'); };
-    window.approveCurrentTask = function() {
-      document.getElementById('approvalModal').classList.add('hidden');
-      alert('代表承認印が押され、Firestoreへ反映されました！');
-    };
-    window.rejectCurrentTask = function() {
-      document.getElementById('approvalModal').classList.add('hidden');
-      alert('修正指示を送信しました。');
-    };
-
     let chatLogs = [
-      { sender: 'manager', text: '家具や小物をタッチすると、該当の実務アプリが直接起動します！' },
-      { sender: 'register', text: '金庫やPOSレジをタッチすると金銭点検が即座にスタートします。' },
-      { sender: 'jiikun', text: 'ちゃぶ台をタッチすると連絡帳が開くぞい。みんなで使おうのう。' }
+      { sender: 'manager', text: '自動ドアから博多の街並み情報と店舗切替が可能です！' },
+      { sender: 'kitchen', text: 'お弁当ケースやゴンドラ棚、フライヤーがタッチ可能になりました。' }
     ];
-
     function renderChat() {
       const box = document.getElementById('intercomChatBox');
       if (!box) return;
@@ -822,8 +806,8 @@
         const d = document.createElement('div');
         d.className = 'flex flex-col items-start';
         d.innerHTML = `
-          <span class="text-[9px] text-amber-900/60">${avatars[l.sender] ? avatars[l.sender].name : 'AI'}</span>
-          <div class="px-2.5 py-1 rounded-xl text-xs bg-amber-100 text-amber-950">${l.text}</div>
+          <span class="text-[9px] text-slate-400">${avatars[l.sender] ? avatars[l.sender].name : 'AI'}</span>
+          <div class="px-2.5 py-1 rounded-xl text-xs bg-slate-100 text-slate-800">${l.text}</div>
         `;
         box.appendChild(d);
       });
