@@ -1,12 +1,44 @@
 rules_version = '2';
+
+// 株式会社ゆだや vcv - Firestore セキュリティルール
+//
+// 方針: 「デフォルト全拒否」。代表（湯田 恭平）のUIDのみ読み書きを許可する。
+// vcv のカモフラージュ設計は、このルールが唯一の防壁である。
+// クライアント側のフラグやUID比較は防壁ではない。
+//
+// OWNER_UID は scripts/setup-yudaya.ps1 が書き込む。
+// （Firebase の UID は秘密情報ではなく、ルールは公開されることを前提に設計されている）
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 湯田代表のUIDのみ読み書き可能、一般ユーザーは全遮断
+
     function isOwner() {
-      return request.auth != null && request.auth.uid == "YUDA_ADMIN_UID_HERE";
+      return request.auth != null
+             && request.auth.uid == 'REPLACE_WITH_OWNER_UID';
     }
-    match /{document=**} {
+
+    // 実店舗名・住所などの機密設定。代表のみ読める。
+    // クライアントはこのドキュメントを読めたかどうかで「代表判定」を行う。
+    match /config/{docId} {
       allow read, write: if isOwner();
+    }
+
+    // カンバンタスク（代表承認フロー）
+    match /tasks/{taskId} {
+      allow read, write: if isOwner();
+    }
+
+    // 金庫・FF 等の店舗実績データ
+    match /safe_records/{recordId} {
+      allow read, write: if isOwner();
+    }
+    match /ff_records/{logId} {
+      allow read, write: if isOwner();
+    }
+
+    // 上記以外は明示的に全拒否
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

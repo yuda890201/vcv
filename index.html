@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script type="module" src="./src/app-firebase.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -105,7 +105,7 @@
         </button>
 
         <button onclick="openTownModal()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-          <i class="fa-solid fa-map-location-dot"></i>
+          <span>🗺️</span>
           <span id="headerStoreName">ゆだや1号店 (モデル店)</span>
         </button>
 
@@ -602,27 +602,28 @@
     let audioCtx = null;
     let isLiveAuthenticated = false;
 
-    // カモフラージュ定義 (未ログイン: ダミー / 代表ログイン時: 本物)
-    const STORE_NAMES = {
-      demo: {
-        brandTitle: 'ゆだやLab 店舗統合ルーム',
-        brandSub: 'バーチャルコンビニ サンプル運営プラットフォーム',
-        store1: 'ゆだや1号店 (モデル店)',
-        store2: 'ゆだや2号店 (サンプル店)',
-        desc1: '昼ピーク・ランチ需要の高い旗艦拠点。',
-        desc2: '夜勤帯オペレーションと金銭管理の拠点。',
-        road: '🛣️ 福岡・メイン通り (循環バス運行中)'
-      },
-      live: {
-        brandTitle: '株式会社ゆだや 店舗統合ルーム',
-        brandSub: '株式会社ゆだや 自律AIオペレーション＆店舗DXハブ',
-        store1: '博多住吉通り店',
-        store2: '福岡清川二丁目店',
-        desc1: '住吉通り沿い・キャナルシティ近く。昼ピーク・観光・通勤客の多い旗艦拠点。',
-        desc2: '日赤通り・百年橋通り近く。住宅・ビジネス混在エリアで夜勤帯需要も高い拠点。',
-        road: '🛣️ 福岡市 住吉通り（博多駅 ⇄ 渡辺通 方面・西鉄バス運行）'
-      }
+    // ================= カモフラージュ定義 =================
+    // ⚠️ 実店舗名・住所・周辺情報をこのファイルに書かないこと。
+    //    GitHub Pages で配信される＝全世界がソースを読めるため。
+    //    実店舗情報は Firestore の config/stores（代表のみ読取可）に置き、
+    //    認証成功後にのみ LIVE_STORE_NAMES へ流し込まれる。
+    const DEMO_STORE_NAMES = {
+      brandTitle: 'ゆだやLab 店舗統合ルーム',
+      brandSub: 'バーチャルコンビニ サンプル運営プラットフォーム',
+      store1: 'ゆだや1号店 (モデル店)',
+      store2: 'ゆだや2号店 (サンプル店)',
+      desc1: '昼ピーク・ランチ需要の高い旗艦拠点。',
+      desc2: '夜勤帯オペレーションと金銭管理の拠点。',
+      road: '🛣️ 福岡・メイン通り (循環バス運行中)'
     };
+
+    // 認証後に Firestore から取得した実店舗情報（未認証の間は常に null）
+    let liveStoreNames = null;
+
+    /** 現在表示すべき店舗情報。実店舗情報が無ければ必ずダミーにフォールバックする。 */
+    function activeStoreNames() {
+      return liveStoreNames || DEMO_STORE_NAMES;
+    }
 
     function playTapSound(freq = 600) {
       try {
@@ -642,8 +643,7 @@
     }
 
     function updateStoreNamesUI() {
-      const mode = isLiveAuthenticated ? 'live' : 'demo';
-      const c = STORE_NAMES[mode];
+      const c = activeStoreNames();
       document.getElementById('headerBrandTitle').innerText = c.brandTitle;
       document.getElementById('headerBrandSub').innerText = c.brandSub;
       const curStore = currentStoreKey === 'store1' ? c.store1 : c.store2;
@@ -657,26 +657,78 @@
       document.getElementById('townRoadLabel').innerText = c.road;
     }
 
-    // ログイン処理（モック兼Firebase切り替え）
-    window.handleLogin = function() {
-      playTapSound(750);
-      isLiveAuthenticated = true;
-      document.getElementById('loginBtn').classList.add('hidden');
-      document.getElementById('userProfile').classList.remove('hidden');
-      document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 animate-pulse';
-      document.getElementById('modeBadge').innerText = '🔥 本番Live同期中 (株式会社ゆだや)';
-      updateStoreNamesUI();
-      alert('湯田代表の認証を確認しました！実店舗名（博多住吉通り店・福岡清川二丁目店）および株式会社ゆだや本番モードへ切り替わりました。');
-    };
+    // ================= 認証（Firebase Auth 実接続） =================
+    // 「代表かどうか」はクライアントでUID比較しない。owner-only ドキュメントを
+    // 読めたかどうかで判定する（判定根拠は firestore.rules 側にある）。
+    // src/app-firebase.js が 'vcv:auth-state' イベントで結果を通知してくる。
 
-    window.handleLogout = function() {
-      playTapSound(400);
+    function renderDemoMode(message) {
       isLiveAuthenticated = false;
+      liveStoreNames = null;
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('userProfile').classList.add('hidden');
-      document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300';
-      document.getElementById('modeBadge').innerText = '🌱 デモ体験中';
+      const badge = document.getElementById('modeBadge');
+      badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300';
+      badge.innerText = '🌱 デモ体験中';
       updateStoreNamesUI();
+      if (message) addChat('manager', message);
+    }
+
+    function renderLiveMode(detail) {
+      isLiveAuthenticated = true;
+      liveStoreNames = detail.stores;
+      document.getElementById('loginBtn').classList.add('hidden');
+      document.getElementById('userProfile').classList.remove('hidden');
+      document.getElementById('userName').innerText = detail.displayName || '代表';
+      const badge = document.getElementById('modeBadge');
+      badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 animate-pulse';
+      badge.innerText = '🔥 本番Live同期中 (株式会社ゆだや)';
+      updateStoreNamesUI();
+      addChat('manager', '代表の認証を確認しました。本番モードへ切り替えます。');
+    }
+
+    window.addEventListener('vcv:auth-state', (ev) => {
+      const d = ev.detail || {};
+      if (d.signedIn && d.isOwner) {
+        renderLiveMode(d);
+      } else if (d.signedIn) {
+        // ログインはできたが代表ではない ＝ 実店舗情報は一切渡さずデモのまま
+        renderDemoMode('このアカウントには本番データの閲覧権限がありません。デモモードを継続します。');
+        if (window.VCV_AUTH) window.VCV_AUTH.signOut().catch(() => {});
+        alert('このGoogleアカウントには本番データの閲覧権限がありません。\nデモモードのままご利用いただけます。');
+      } else {
+        renderDemoMode(null);
+      }
+    });
+
+    window.handleLogin = async function() {
+      playTapSound(750);
+      if (!window.VCV_AUTH || !window.VCV_AUTH.isConfigured()) {
+        alert('Firebase 接続設定がまだ未完了です。\n\nscripts/setup-yudaya.ps1 を実行して apiKey / appId を設定してください。\n（設定するまではデモモードのまま動作します）');
+        return;
+      }
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      try {
+        await window.VCV_AUTH.signIn();
+      } catch (err) {
+        const code = (err && err.code) || '';
+        if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+          alert('ログインに失敗しました: ' + (code || err));
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    window.handleLogout = async function() {
+      playTapSound(400);
+      try {
+        if (window.VCV_AUTH) await window.VCV_AUTH.signOut();
+      } catch (err) {
+        console.error('[vcv] signOut failed', err);
+      }
+      renderDemoMode(null);
     };
 
     // 時間帯切り替え
@@ -792,8 +844,8 @@
       currentStoreKey = storeKey;
       closeTownModal();
       updateStoreNamesUI();
-      const mode = isLiveAuthenticated ? 'live' : 'demo';
-      const name = currentStoreKey === 'store1' ? STORE_NAMES[mode].store1 : STORE_NAMES[mode].store2;
+      const c = activeStoreNames();
+      const name = currentStoreKey === 'store1' ? c.store1 : c.store2;
       moveAvatar('manager', 'door', `${name}へ移動しました！`);
       addChat('manager', `店舗ビューを【${name}】へ切り替えました。`);
     };
