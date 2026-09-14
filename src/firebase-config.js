@@ -14,10 +14,10 @@
  */
 
 export const firebaseConfig = {
-  apiKey: 'REPLACE_WITH_FIREBASE_API_KEY',
-  authDomain: 'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
-  projectId: 'REPLACE_WITH_PROJECT_ID',
-  appId: 'REPLACE_WITH_FIREBASE_APP_ID'
+  apiKey: 'AIzaSyD-f83FKVDNRm5qOLMAzA7iepUIE_5WbvM',
+  authDomain: 'yudaya-vcv.firebaseapp.com',
+  projectId: 'yudaya-vcv',
+  appId: '1:778196647921:web:935f588598c3dc4c590e50'
 };
 
 /** 設定が実値で埋まっているか（未設定ならアプリはデモモードのまま動く） */
