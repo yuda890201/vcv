@@ -15,8 +15,8 @@
 
 export const firebaseConfig = {
   apiKey: 'REPLACE_WITH_FIREBASE_API_KEY',
-  authDomain: 'yuda-store-ai-1788800335.firebaseapp.com',
-  projectId: 'yuda-store-ai-1788800335',
+  authDomain: 'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
+  projectId: 'REPLACE_WITH_PROJECT_ID',
   appId: 'REPLACE_WITH_FIREBASE_APP_ID'
 };
 

@@ -19,6 +19,7 @@
 
 [CmdletBinding()]
 param(
+    [string]$ProjectId,
     [string]$ApiKey,
     [string]$AppId,
     [string]$OwnerUid,
@@ -124,17 +125,47 @@ if ($loginList -match 'No authorized accounts|ログインしていません') {
 Write-Ok "Firebase CLI ログイン済み"
 
 # --------------------------------------------- [3] 設定値の入力と書き込み --
-Write-Step 3 "Firebase 接続設定 (src/firebase-config.js)"
+Write-Step 3 "Firebase プロジェクトの確認"
+
+$configText = Get-Content $ConfigPath -Raw
+$curProject = if ($configText -match "projectId:\s*'([^']*)'") { $Matches[1] } else { '' }
+
+Write-Info "現在コードに設定されているプロジェクトID: $curProject"
+Write-Info ""
+Write-Info "あなたの Firebase アカウントで利用できるプロジェクト一覧:"
+firebase projects:list
+
+Write-Host ""
+Write-Host "  ▼ 上の一覧に使いたいプロジェクトが無い場合" -ForegroundColor White
+Write-Info "https://console.firebase.google.com/ を開き [プロジェクトを追加] で作成してください。"
+Write-Info "作成後、Firestore Database と Authentication(Google) の有効化も必要です。"
+Write-Info "作成が終わったら、このスクリプトを再実行してください。"
+
+$ProjectId = Read-Value 'Project ID を入力してください（上の一覧の Project ID 列）' $curProject 'yudaya-vcv'
+if (-not $ProjectId -or $ProjectId.StartsWith('REPLACE_WITH_')) { Write-Err2 'Project ID が未入力です。'; exit 1 }
+
+# プロジェクトが実在するか確認（架空IDのまま進むのを防ぐ）
+$projList = (firebase projects:list 2>&1 | Out-String)
+if ($projList -notmatch [regex]::Escape($ProjectId)) {
+    Write-Err2 "プロジェクト '$ProjectId' が一覧に見つかりません。"
+    Write-Info 'IDの入力ミスか、プロジェクトが未作成です。'
+    Write-Info 'https://console.firebase.google.com/ で作成してから再実行してください。'
+    exit 1
+}
+Write-Ok "プロジェクト '$ProjectId' を確認しました"
+
+$ConsoleBase = "https://console.firebase.google.com/project/$ProjectId"
+
+Write-Step 4 "Firebase 接続設定 (src/firebase-config.js)"
 
 Write-Host ""
 Write-Host "  ▼ 値の取得場所" -ForegroundColor White
 Write-Info "Firebase コンソール → プロジェクトの設定(歯車) → 全般 → マイアプリ → Web アプリ"
-Write-Info "https://console.firebase.google.com/project/yuda-store-ai-1788800335/settings/general"
+Write-Info "$ConsoleBase/settings/general"
+Write-Info "（Web アプリが未登録なら、同じ画面の </> アイコンから追加してください）"
 Write-Info ""
 Write-Info "※ apiKey は秘密情報ではありません。Web アプリでは公開が前提で、"
 Write-Info "   実際の防御は Firestore セキュリティルールが担います。"
-
-$configText = Get-Content $ConfigPath -Raw
 
 $curApiKey = if ($configText -match "apiKey:\s*'([^']*)'") { $Matches[1] } else { '' }
 $curAppId  = if ($configText -match "appId:\s*'([^']*)'")  { $Matches[1] } else { '' }
@@ -148,18 +179,25 @@ if (-not $AppId  -or $AppId.StartsWith('REPLACE_WITH_'))  { Write-Err2 'appId �
 if ($ApiKey -notmatch '^AIza[0-9A-Za-z_\-]{30,}$') { Write-Warn2 "apiKey の形式が一般的な Firebase の形式と異なります。入力ミスにご注意ください。" }
 if ($AppId  -notmatch '^\d+:\d+:web:[0-9a-f]+$')   { Write-Warn2 "appId の形式が一般的な Firebase の形式と異なります。入力ミスにご注意ください。" }
 
-$configText = [regex]::Replace($configText, "(apiKey:\s*')[^']*(')", "`${1}$ApiKey`${2}")
-$configText = [regex]::Replace($configText, "(appId:\s*')[^']*(')",  "`${1}$AppId`${2}")
+$configText = [regex]::Replace($configText, "(apiKey:\s*')[^']*(')",     "`${1}$ApiKey`${2}")
+$configText = [regex]::Replace($configText, "(appId:\s*')[^']*(')",      "`${1}$AppId`${2}")
+$configText = [regex]::Replace($configText, "(projectId:\s*')[^']*(')",  "`${1}$ProjectId`${2}")
+$configText = [regex]::Replace($configText, "(authDomain:\s*')[^']*(')", "`${1}$ProjectId.firebaseapp.com`${2}")
 Save-Utf8NoBom $ConfigPath $configText
 Write-Ok "src/firebase-config.js を更新しました"
 
+# .firebaserc もプロジェクトIDに追従させる
+$RcPath = Join-Path $RepoRoot '.firebaserc'
+Save-Utf8NoBom $RcPath ("{`n  `"projects`": {`n    `"default`": `"$ProjectId`"`n  }`n}`n")
+Write-Ok ".firebaserc を更新しました"
+
 # -------------------------------------------- [4] 代表UID をルールへ反映 --
-Write-Step 4 "代表UID の設定 (firestore.rules)"
+Write-Step 5 "代表UID の設定 (firestore.rules)"
 
 Write-Host ""
 Write-Host "  ▼ UID の取得場所" -ForegroundColor White
 Write-Info "Firebase コンソール → Authentication → Users → 該当アカウントの「ユーザーUID」列"
-Write-Info "https://console.firebase.google.com/project/yuda-store-ai-1788800335/authentication/users"
+Write-Info "$ConsoleBase/authentication/users"
 Write-Info ""
 Write-Info "※ まだ一度もログインしたことがない場合、Users 一覧は空です。"
 Write-Info "   その場合はいったんこのスクリプトを Ctrl+C で中断し、"
@@ -178,42 +216,42 @@ Save-Utf8NoBom $RulesPath $rulesText
 Write-Ok "firestore.rules を更新しました（代表UIDのみ許可）"
 
 # ------------------------------------------------------ [5] ルールのデプロイ --
-Write-Step 5 "Firestore セキュリティルールのデプロイ"
+Write-Step 6 "Firestore セキュリティルールのデプロイ"
 
 if ($SkipDeploy) {
     Write-Warn2 "-SkipDeploy が指定されたためスキップします。"
 } else {
     Write-Info "本番プロジェクトへルールを反映します..."
-    firebase deploy --only firestore:rules --project yuda-store-ai-1788800335
+    firebase deploy --only firestore:rules --project $ProjectId
     if ($LASTEXITCODE -ne 0) {
         Write-Err2 "ルールのデプロイに失敗しました。"
         Write-Info "Firestore データベースが未作成の可能性があります。コンソールで作成してから再実行してください:"
-        Write-Info "https://console.firebase.google.com/project/yuda-store-ai-1788800335/firestore"
+        Write-Info "$ConsoleBase/firestore"
         exit 1
     }
     Write-Ok "ルールをデプロイしました。これで実店舗データは代表以外から完全に遮断されます。"
 }
 
 # ------------------------------------------------------ [6] GitHub へ反映 --
-Write-Step 6 "GitHub への反映"
+Write-Step 7 "GitHub への反映"
 
 if ($SkipPush) {
     Write-Warn2 "-SkipPush が指定されたためスキップします。"
 } else {
-    $changed = (git status --porcelain -- src/firebase-config.js firestore.rules | Out-String).Trim()
+    $changed = (git status --porcelain -- src/firebase-config.js firestore.rules .firebaserc | Out-String).Trim()
     if (-not $changed) {
         Write-Ok "コミットすべき変更はありません。"
     } else {
         Write-Host ""
         Write-Info "以下のファイルが変更されています:"
-        git status --short -- src/firebase-config.js firestore.rules
+        git status --short -- src/firebase-config.js firestore.rules .firebaserc
         Write-Info ""
         Write-Info "※ apiKey / appId / UID はいずれも秘密情報ではなく、"
         Write-Info "   GitHub Pages で動作させるにはリポジトリに含める必要があります。"
         $ans = Read-Host "  コミットして push しますか? (y/N)"
         if ($ans -eq 'y' -or $ans -eq 'Y') {
             $branch = (git rev-parse --abbrev-ref HEAD).Trim()
-            git add src/firebase-config.js firestore.rules
+            git add src/firebase-config.js firestore.rules .firebaserc
             git commit -m "chore: Firebase接続設定と代表UIDを設定"
             for ($i = 1; $i -le 5; $i++) {
                 git push -u origin $branch
@@ -237,18 +275,21 @@ Write-Host "  セットアップ完了。残りはコンソールでの操作で
 Write-Host "==============================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  [A] Google ログインを有効化（未設定の場合）" -ForegroundColor White
-Write-Info "https://console.firebase.google.com/project/yuda-store-ai-1788800335/authentication/providers"
+Write-Info "$ConsoleBase/authentication/providers"
 Write-Info "→ Google を「有効」にして保存"
 Write-Host ""
 Write-Host "  [B] 承認済みドメインに GitHub Pages を追加" -ForegroundColor White
-Write-Info "https://console.firebase.google.com/project/yuda-store-ai-1788800335/authentication/settings"
+Write-Info "$ConsoleBase/authentication/settings"
 Write-Info "→ 承認済みドメイン に 'yuda890201.github.io' を追加"
 Write-Info "   （これが無いと公開URLでログインできません）"
 Write-Host ""
 Write-Host "  [C] 実店舗情報を Firestore へ登録" -ForegroundColor White
 Write-Info "下記をブラウザで開き、代表アカウントでログインして店舗名を入力・保存してください。"
-Write-Info "ローカル: $RepoRoot\tools\seed-store-config.html"
-Write-Info "公開URL: https://yuda890201.github.io/vcv/tools/seed-store-config.html"
+Write-Info "https://yuda890201.github.io/vcv/tools/seed-store-config.html"
+Write-Info ""
+Write-Warn2 "ローカルのHTMLファイルを直接ダブルクリックしても動きません。"
+Write-Info "  ES モジュールの読み込みが file:// では遮断されるためです。"
+Write-Info "  上記の公開URL（Pages に新コードが反映された後）から開いてください。"
 Write-Info ""
 Write-Info "※ 実店舗名はコードには一切書かれていません。ここで登録した内容が"
 Write-Info "   代表ログイン時にのみ画面へ反映されます。"
