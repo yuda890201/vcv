@@ -30,6 +30,29 @@ let unsubscribeAuth = null;
  */
 const SESSION_HINT_KEY = 'vcv:owner-session';
 
+/**
+ * signInWithRedirect でページを離れる直前に立てるフラグ。
+ * 戻ってきた時に getRedirectResult を拾うため、リスナーを起動する必要がある。
+ */
+const PENDING_REDIRECT_KEY = 'vcv:auth-redirect';
+
+function readPendingRedirect() {
+  try {
+    return window.localStorage.getItem(PENDING_REDIRECT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writePendingRedirect(on) {
+  try {
+    if (on) window.localStorage.setItem(PENDING_REDIRECT_KEY, '1');
+    else window.localStorage.removeItem(PENDING_REDIRECT_KEY);
+  } catch {
+    /* 無視して構わない */
+  }
+}
+
 function readSessionHint() {
   try {
     return window.localStorage.getItem(SESSION_HINT_KEY) === '1';
@@ -113,6 +136,17 @@ async function startAuthListener() {
   unsubscribeAuth = authMod.onAuthStateChanged(auth, (user) => {
     handleUser(user).catch((err) => console.error('[vcv] auth state error', err));
   });
+
+  // リダイレクト方式でログインした場合、戻ってきた時にここで結果を拾う
+  if (readPendingRedirect()) {
+    authMod
+      .getRedirectResult(auth)
+      .catch((err) => {
+        console.error('[vcv] redirect sign-in failed', err);
+        window.dispatchEvent(new CustomEvent('vcv:auth-error', { detail: { code: (err && err.code) || String(err) } }));
+      })
+      .finally(() => writePendingRedirect(false));
+  }
 }
 
 window.VCV_AUTH = {
@@ -122,7 +156,19 @@ window.VCV_AUTH = {
     const { auth, authMod } = await ensureFirebase();
     await startAuthListener();
     const provider = new authMod.GoogleAuthProvider();
-    await authMod.signInWithPopup(auth, provider);
+    try {
+      await authMod.signInWithPopup(auth, provider);
+    } catch (err) {
+      const code = err && err.code;
+      // ポップアップがブロックされる環境（ブロッカー、一部のアプリ内ブラウザ等）では
+      // ページ遷移するリダイレクト方式へ自動で切り替える
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        writePendingRedirect(true);
+        await authMod.signInWithRedirect(auth, provider);
+        return;
+      }
+      throw err;
+    }
   },
 
   async signOut() {
@@ -132,7 +178,8 @@ window.VCV_AUTH = {
 
   /** 既存セッションの復帰（設定済み かつ 過去にログイン実績のあるブラウザのみ） */
   async restore() {
-    if (!isFirebaseConfigured() || !readSessionHint()) return;
+    if (!isFirebaseConfigured()) return;
+    if (!readSessionHint() && !readPendingRedirect()) return;
     await startAuthListener();
   }
 };

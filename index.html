@@ -767,25 +767,71 @@
       }
     });
 
+    /** Firebase のエラーコードを「次に何をすればいいか」に翻訳する */
+    function authErrorMessage(code) {
+      const project = 'yudaya-vcv';
+      switch (code) {
+        case 'auth/operation-not-allowed':
+          return 'Google ログインが Firebase 側で有効になっていません。\n\n'
+            + 'Firebase コンソール → Authentication → Sign-in method → Google を「有効」にして保存してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/providers`;
+        case 'auth/unauthorized-domain':
+          return `このドメイン（${location.hostname}）が Firebase の承認済みドメインに入っていません。\n\n`
+            + 'Firebase コンソール → Authentication → Settings → 承認済みドメイン に追加してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/settings`;
+        case 'auth/configuration-not-found':
+          return 'Authentication がまだ開始されていません。\n\n'
+            + 'Firebase コンソール → Authentication → 「始める」を押してから Google を有効化してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/providers`;
+        case 'auth/network-request-failed':
+          return 'ネットワークに接続できませんでした。通信環境を確認して、もう一度お試しください。';
+        case 'auth/popup-blocked':
+          return 'ブラウザがポップアップを遮断しました。ページ遷移方式に切り替えます。\n'
+            + 'もう一度ログインボタンを押してください。';
+        default:
+          return 'ログインに失敗しました: ' + code;
+      }
+    }
+
     window.handleLogin = async function() {
       playTapSound(750);
-      if (!window.VCV_AUTH || !window.VCV_AUTH.isConfigured()) {
+
+      // 認証モジュール自体が読み込めていないケース（file:// 直開き等）を区別する
+      if (!window.VCV_AUTH) {
+        alert('認証モジュール（src/app-firebase.js）を読み込めていません。\n\n'
+          + 'HTMLファイルを直接ダブルクリックで開いていませんか？\n'
+          + 'ES モジュールは file:// では読み込めません。\n\n'
+          + '  cd (vcvフォルダ)\n'
+          + '  python -m http.server 8000\n\n'
+          + 'を実行して http://localhost:8000 から開いてください。');
+        return;
+      }
+
+      if (!window.VCV_AUTH.isConfigured()) {
         alert('Firebase 接続設定がまだ未完了です。\n\nscripts/setup-yudaya.ps1 を実行して apiKey / appId を設定してください。\n（設定するまではデモモードのまま動作します）');
         return;
       }
+
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
       try {
         await window.VCV_AUTH.signIn();
       } catch (err) {
-        const code = (err && err.code) || '';
+        const code = (err && err.code) || String(err);
+        console.error('[vcv] sign-in failed', err);
         if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-          alert('ログインに失敗しました: ' + (code || err));
+          alert(authErrorMessage(code));
         }
       } finally {
         btn.disabled = false;
       }
     };
+
+    // リダイレクト方式での復帰に失敗した場合もユーザーに理由を伝える
+    window.addEventListener('vcv:auth-error', (ev) => {
+      const code = (ev.detail && ev.detail.code) || '';
+      if (code) alert(authErrorMessage(code));
+    });
 
     window.handleLogout = async function() {
       playTapSound(400);
