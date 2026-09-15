@@ -8,3 +8,15 @@
 - **タスクカンバン**: 未着手 / 実施中 / 点検中 / 要代表承認 / 完了
 - **Human-in-the-Loop**: 湯田代表による承認ゲーティング（朱肉スタンプ印）
 - **自作アプリ棚**: シフト管理、FF調理・廃棄、金庫・レジ引継ぎ、金券管理
+- **端末間の受け渡し**: 店用スマホで操作するアプリはタッチするとQRコードを表示。
+  タブレットで完結するアプリは今まで通り画面内で開く（`APP_REGISTRY` の `device` で出し分け）
+
+## QRコードについて
+QRに載せるのは公開済みの GitHub Pages の URL のみです。
+認証情報・トークン・店舗情報は一切含みません。読み取った端末側では
+従来どおりログインが必要なため、QR 自体は秘密情報ではありません。
+
+## 同梱ライブラリ
+- `src/vendor/qrcode.mjs` — QR Code Generator for JavaScript
+  Copyright (c) 2009 Kazuhiko Arase / MIT License / http://www.d-project.com/
+  ネットワーク断でも動くよう CDN ではなく同梱しています。

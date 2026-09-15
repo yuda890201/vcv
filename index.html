@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="./src/app-firebase.js"></script>
+  <script type="module" src="./src/qr.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -642,20 +643,33 @@
         <button onclick="closeLauncherModal()" class="text-3xl font-black">&times;</button>
       </div>
       <div class="flex-1 bg-amber-50/50 p-5 overflow-y-auto space-y-4 text-xs">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button onclick="openAppModal('shift-management-app', 'シフト管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📅</span><div class="font-black mt-1">シフト管理アプリ</div></button>
-          <button onclick="openAppModal('work_schedule', 'ワークスケジュール')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">⏱️</span><div class="font-black mt-1">ワークスケジュール</div></button>
-          <button onclick="openAppModal('kintai_error_feedback', '勤怠エラーフィードバック')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">⚠️</span><div class="font-black mt-1">勤怠エラーフィードバック</div></button>
-          <button onclick="openAppModal('incentive-board', 'インセンティブボード')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🏆</span><div class="font-black mt-1">インセンティブボード</div></button>
-          <button onclick="openAppModal('kinko-app', '金庫・レジ引継ぎアプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">💰</span><div class="font-black mt-1">金庫・レジ引継ぎ</div></button>
-          <button onclick="openAppModal('kitte_manage', '切手・金券管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">✉️</span><div class="font-black mt-1">切手・金券管理</div></button>
-          <button onclick="openAppModal('purchase-limit', '購入制限管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🛑</span><div class="font-black mt-1">購入制限管理</div></button>
-          <button onclick="openAppModal('FF_manage', 'FF調理・廃棄管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🍗</span><div class="font-black mt-1">FF調理・廃棄管理</div></button>
-          <button onclick="openAppModal('shelf-review-app', '棚点検・売場レビュー')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🛒</span><div class="font-black mt-1">棚点検・売場レビュー</div></button>
-          <button onclick="openAppModal('store-communication-app', '店舗コミュニケーション')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">💬</span><div class="font-black mt-1">店舗連絡板</div></button>
-          <button onclick="openAppModal('store-feedback', '店舗フィードバック')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📋</span><div class="font-black mt-1">店舗フィードバック</div></button>
-          <button onclick="openAppModal('bunseki-tool', '店舗分析ツール')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📊</span><div class="font-black mt-1">店舗分析ツール</div></button>
+        <p class="text-[11px] text-amber-900/80 font-bold">📱 のアプリは店用スマホで操作するもの。タッチするとQRコードが出ます。</p>
+        <div id="launcherGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QR 受け渡し（店用スマホへ） -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-sky-400 max-w-sm w-full overflow-hidden">
+      <div class="px-5 py-3 bg-sky-500 text-sky-950 flex items-center justify-between">
+        <h3 class="font-black text-sm">📱 店用スマホで開く</h3>
+        <button onclick="closeQrModal()" class="w-8 h-8 rounded-full bg-sky-800 text-white font-black">&times;</button>
+      </div>
+      <div class="p-5 bg-sky-50/60 space-y-3 text-center">
+        <div class="font-black text-sm text-slate-800" id="qrAppTitle">アプリ名</div>
+        <div id="qrCanvas" class="mx-auto w-52 h-52 bg-white rounded-2xl border-2 border-sky-200 p-2 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-400">QRを生成中…</span>
+        </div>
+        <p class="text-[11px] font-bold text-slate-600 leading-relaxed">
+          店用スマホのカメラで読み取ってください。<br>
+          スマホ側でのログインは今まで通り必要です。
+        </p>
+        <div id="qrUrl" class="text-[10px] text-slate-500 break-all font-mono bg-white rounded-xl border px-2 py-1.5"></div>
+        <button id="qrFallbackBtn" class="w-full py-2.5 bg-slate-200 text-slate-700 rounded-2xl font-black text-xs">
+          このままタブレットで開く
+        </button>
       </div>
     </div>
   </div>
@@ -984,13 +998,113 @@
       else if (type === 'breakroom') { moveAvatar('jiikun', 'breakroom', '店舗連絡板を開くぞい！'); openAppModal('store-communication-app', '店舗コミュニケーション'); }
     };
 
+    /**
+     * 自作アプリの登録簿（設計ルール7「アプリごとに対象端末を決める」の実体）
+     *   device: 'tablet' … 店舗タブレットで完結する → iframe で開く
+     *           'phone'  … 店用スマホで操作する     → QR を出して受け渡す
+     * ここに実店舗名・実店舗IDを書かないこと（CLAUDE.md ルール5）。
+     * 将来 Firestore の config/apps へ移す前提で、形を先に揃えてある。
+     */
+    const APP_REGISTRY = [
+      { repo: 'shift-management-app',    title: 'シフト管理アプリ',        emoji: '📅', device: 'tablet' },
+      { repo: 'work_schedule',           title: 'ワークスケジュール',      emoji: '⏱️', device: 'tablet' },
+      { repo: 'kintai_error_feedback',   title: '勤怠エラーフィードバック', emoji: '⚠️', device: 'phone'  },
+      { repo: 'incentive-board',         title: 'インセンティブボード',    emoji: '🏆', device: 'tablet' },
+      { repo: 'kinko-app',               title: '金庫・レジ引継ぎアプリ',  emoji: '💰', device: 'phone'  },
+      { repo: 'kitte_manage',            title: '切手・金券管理アプリ',    emoji: '✉️', device: 'phone'  },
+      { repo: 'purchase-limit',          title: '購入制限管理アプリ',      emoji: '🛑', device: 'phone'  },
+      { repo: 'FF_manage',               title: 'FF調理・廃棄管理アプリ',  emoji: '🍗', device: 'tablet' },
+      { repo: 'shelf-review-app',        title: '棚点検・売場レビュー',    emoji: '🛒', device: 'phone'  },
+      { repo: 'store-communication-app', title: '店舗連絡板',              emoji: '💬', device: 'phone'  },
+      { repo: 'store-feedback',          title: '店舗フィードバック',      emoji: '📋', device: 'phone'  },
+      { repo: 'bunseki-tool',            title: '店舗分析ツール',          emoji: '📊', device: 'phone'  }
+    ];
+
+    const appUrl = (repo) => `https://yuda890201.github.io/${repo}/`;
+    const findApp = (repo) => APP_REGISTRY.find((a) => a.repo === repo) || null;
+
+    /** ランチャーのボタンを登録簿から生成する */
+    function renderLauncher() {
+      const grid = document.getElementById('launcherGrid');
+      if (!grid) return;
+      grid.replaceChildren(...APP_REGISTRY.map((app) => {
+        const btn = document.createElement('button');
+        btn.className = 'p-3 bg-white rounded-2xl border text-left shadow-sm relative';
+        btn.onclick = () => openAppModal(app.repo, app.title);
+
+        const icon = document.createElement('span');
+        icon.className = 'text-2xl';
+        icon.textContent = app.emoji;
+        btn.appendChild(icon);
+
+        if (app.device === 'phone') {
+          const badge = document.createElement('span');
+          badge.className = 'absolute top-2 right-2 text-sm';
+          badge.title = '店用スマホで操作するアプリ';
+          badge.textContent = '📱';
+          btn.appendChild(badge);
+        }
+
+        const name = document.createElement('div');
+        name.className = 'font-black mt-1';
+        name.textContent = app.title;
+        btn.appendChild(name);
+
+        return btn;
+      }));
+    }
+
+    /**
+     * アプリを開く。対象端末に応じて自動で出し分ける。
+     *   tablet → 今まで通り iframe
+     *   phone  → QR を表示（店用スマホのカメラで読み取ってもらう）
+     */
     window.openAppModal = function(repo, title) {
+      const app = findApp(repo);
+      const label = title || (app && app.title) || repo;
+      if (app && app.device === 'phone') { openQrModal(repo, label); return; }
+      openAppViewer(repo, label);
+    };
+
+    /** タブレットの iframe で開く（QRからの「このままタブレットで開く」も通る） */
+    window.openAppViewer = function(repo, title) {
       playTapSound(600);
       document.getElementById('activeAppTitle').innerText = title;
-      document.getElementById('activeAppExternalLink').href = `https://yuda890201.github.io/${repo}/`;
-      document.getElementById('appIframe').src = `https://yuda890201.github.io/${repo}/`;
+      document.getElementById('activeAppExternalLink').href = appUrl(repo);
+      document.getElementById('appIframe').src = appUrl(repo);
       document.getElementById('appViewerModal').classList.remove('hidden');
     };
+
+    /** 店用スマホへの受け渡しQRを表示する（A案: URLのみ） */
+    window.openQrModal = function(repo, title) {
+      playTapSound(700);
+      const url = appUrl(repo);
+      document.getElementById('qrAppTitle').textContent = title;
+      document.getElementById('qrUrl').textContent = url;
+
+      const box = document.getElementById('qrCanvas');
+      const placeholder = document.createElement('span');
+      placeholder.className = 'text-xs font-bold text-slate-400';
+      placeholder.textContent = 'QRを生成中…';
+      box.replaceChildren(placeholder);
+
+      const fallback = document.getElementById('qrFallbackBtn');
+      fallback.onclick = () => { closeQrModal(); openAppViewer(repo, title); };
+
+      document.getElementById('qrModal').classList.remove('hidden');
+
+      if (!window.VCV_QR) {
+        placeholder.textContent = 'QRモジュールを読み込めませんでした';
+        return;
+      }
+      window.VCV_QR.render(box, url).catch((err) => {
+        console.error('[vcv] QR render failed', err);
+        placeholder.textContent = 'QRの生成に失敗しました';
+        box.replaceChildren(placeholder);
+      });
+    };
+    window.closeQrModal = function() { playTapSound(400); document.getElementById('qrModal').classList.add('hidden'); };
+
     window.closeAppModal = function() { playTapSound(400); document.getElementById('appViewerModal').classList.add('hidden'); document.getElementById('appIframe').src = ''; };
     window.openLauncherModal = function() { playTapSound(650); document.getElementById('launcherModal').classList.remove('hidden'); };
     window.closeLauncherModal = function() { playTapSound(400); document.getElementById('launcherModal').classList.add('hidden'); };
@@ -1262,6 +1376,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       updateStoreNamesUI();
+      renderLauncher();
       renderKanban();
       renderChat();
       setInterval(() => {
