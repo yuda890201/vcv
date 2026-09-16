@@ -70,7 +70,7 @@ function writeSessionHint(on) {
   }
 }
 
-async function ensureFirebase() {
+export async function ensureFirebase() {
   if (ctx) return ctx;
   const [appMod, authMod, storeMod] = await Promise.all([
     import(`${SDK_BASE}/firebase-app.js`),
@@ -187,56 +187,3 @@ window.VCV_AUTH = {
 // リロード後もログイン状態を復帰させる。
 // 未設定 or 一般来訪者のブラウザでは Firebase SDK を一切読み込まない。
 window.VCV_AUTH.restore().catch((err) => console.error('[vcv] restore failed', err));
-
-// ================= タスク（カンバン）連携 =================
-// 代表ログイン時のみ Firestore の tasks コレクションを購読する。
-// デモモードでは一切呼ばれない（index.html 側がモックを使う）。
-
-let unsubscribeTasks = null;
-
-window.VCV_DATA = {
-  /**
-   * tasks コレクションをリアルタイム購読する。
-   * @param {(tasks: object[]) => void} onChange
-   * @returns {Promise<() => void>} 購読解除関数
-   */
-  async subscribeTasks(onChange) {
-    const { db, storeMod } = await ensureFirebase();
-    if (unsubscribeTasks) unsubscribeTasks();
-    unsubscribeTasks = storeMod.onSnapshot(
-      storeMod.collection(db, 'tasks'),
-      (snap) => onChange(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-      (err) => console.error('[vcv] tasks subscribe error', err)
-    );
-    return () => {
-      if (unsubscribeTasks) unsubscribeTasks();
-      unsubscribeTasks = null;
-    };
-  },
-
-  unsubscribeTasks() {
-    if (unsubscribeTasks) unsubscribeTasks();
-    unsubscribeTasks = null;
-  },
-
-  /** 代表承認を確定し Firestore へ保存する */
-  async approveTask(taskId, approverName) {
-    const { db, storeMod } = await ensureFirebase();
-    await storeMod.updateDoc(storeMod.doc(db, 'tasks', taskId), {
-      status: 'done',
-      approved_at: new Date().toISOString(),
-      approved_by: approverName
-    });
-  },
-
-  /** 差し戻し（点検中へ戻す） */
-  async rejectTask(taskId, reason) {
-    const { db, storeMod } = await ensureFirebase();
-    await storeMod.updateDoc(storeMod.doc(db, 'tasks', taskId), {
-      status: 'review',
-      approved_at: null,
-      approved_by: null,
-      reject_reason: reason || ''
-    });
-  }
-};

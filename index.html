@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="./src/app-firebase.js"></script>
   <script type="module" src="./src/qr.js"></script>
+  <script type="module" src="./src/storage/index.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -1142,21 +1143,13 @@
 
     const ASSIGNEE_LABELS = { manager: '田中 (店長)', kitchen: 'グエン (厨房)', register: '佐藤 (リーダー)', jiikun: 'じい君 (相談役)' };
 
-    const MOCK_TASKS = [
-      { id: 'T-101', title: '翌週シフト希望集計とコマ割り策定', assignee: 'manager', status: 'approval', requires_approval: true,
-        summary: '昼ピーク3名配置。予算比97.4%。', diff_preview: '+2名補強 (金曜夜間) / 総人件費 ¥248,500 週', db_target: 'ゆだやシフト管理DB' },
-      { id: 'T-102', title: '14:00 レジ交代・釣銭準備金点検', assignee: 'register', status: 'approval', requires_approval: true,
-        summary: '点検完了。違算0円。金庫在高一致。', diff_preview: 'POS1 ¥150,000 / POS2 ¥150,000 / 金庫 ¥482,000 (差異 ¥0)', db_target: 'ゆだや金庫・レジ引継ぎDB' },
-      { id: 'T-103', title: 'ランチピーク前 チキン仕込み', assignee: 'kitchen', status: 'progress', requires_approval: false,
-        summary: 'チキン24個仕込み中。油温175℃。', diff_preview: '', db_target: 'ゆだやFF調理・廃棄DB' },
-      { id: 'T-104', title: '1号棚スナック 前出し・欠品チェック', assignee: 'kitchen', status: 'todo', requires_approval: false,
-        summary: '朝勤帯の定例棚点検。', diff_preview: '', db_target: 'ゆだや棚点検DB' }
-    ];
-
-    /** 画面が表示しているタスク一覧（デモ=モックのコピー / Live=Firestore） */
-    let tasks = MOCK_TASKS.map(t => ({ ...t }));
+    /**
+     * 画面が表示しているタスク一覧。
+     * 保存処理はここには書かない。ストア(src/storage/)から onChange で流れてくる
+     * ものを描画用に受け取るだけ（設計ルール1）。
+     */
+    let tasks = [];
     let currentApprovalTaskId = null;
-    let detachTaskSubscription = null;
 
     function assigneeLabel(t) {
       return t.assignee_name || ASSIGNEE_LABELS[t.assignee] || t.assignee || '担当者';
@@ -1281,23 +1274,23 @@
       area.appendChild(stamp);
       document.getElementById('approvalActions').classList.add('hidden');
 
-      if (isLiveAuthenticated && window.VCV_DATA) {
-        try {
-          await window.VCV_DATA.approveTask(t.id, approver);
-          showApprovalResult('✅ <strong>承認を確定しました。</strong><br>' + escapeHtml(t.db_target || 'Firestore') + ' へ保存しました。', true);
-        } catch (err) {
-          showApprovalResult('⚠️ <strong>保存に失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
-          document.getElementById('approvalActions').classList.remove('hidden');
-          return;
-        }
-      } else {
-        // デモモード: 実DBには触れない
-        t.status = 'done';
-        t.approved_by = approver;
-        t.approved_at = new Date().toISOString();
-        renderKanban();
-        showApprovalResult('✅ <strong>承認しました（デモ）。</strong><br>デモモードのため実際のDBには保存されません。', true);
+      // 保存先の違いはストアが吸収する。ここでは分岐しない
+      const store = activeStore();
+      if (!store) {
+        showApprovalResult('⚠️ <strong>保存先が用意できていません。</strong><br>ページを再読み込みしてください。', false);
+        document.getElementById('approvalActions').classList.remove('hidden');
+        return;
       }
+      try {
+        await store.approveTask(t.id, approver);
+      } catch (err) {
+        showApprovalResult('⚠️ <strong>保存に失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
+        document.getElementById('approvalActions').classList.remove('hidden');
+        return;
+      }
+      showApprovalResult(store.kind === 'firebase'
+        ? '✅ <strong>承認を確定しました。</strong><br>' + escapeHtml(t.db_target || 'Firestore') + ' へ保存しました。'
+        : '✅ <strong>承認しました（体験版）。</strong><br>この端末の中だけに保存されます。', true);
 
       addChat('manager', '【' + t.id + '】' + t.title + ' を代表承認しました。');
       setTimeout(() => { if (currentApprovalTaskId === t.id) closeApprovalModal(); }, 2200);
@@ -1315,17 +1308,16 @@
 
       const reason = prompt('差し戻し理由を入力してください（任意）') || '';
 
-      if (isLiveAuthenticated && window.VCV_DATA) {
-        try {
-          await window.VCV_DATA.rejectTask(t.id, reason);
-        } catch (err) {
-          showApprovalResult('⚠️ <strong>差し戻しに失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
-          return;
-        }
-      } else {
-        t.status = 'review';
-        t.reject_reason = reason;
-        renderKanban();
+      const store = activeStore();
+      if (!store) {
+        showApprovalResult('⚠️ <strong>保存先が用意できていません。</strong><br>ページを再読み込みしてください。', false);
+        return;
+      }
+      try {
+        await store.rejectTask(t.id, reason);
+      } catch (err) {
+        showApprovalResult('⚠️ <strong>差し戻しに失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
+        return;
       }
 
       addChat('manager', '【' + t.id + '】を点検中へ差し戻しました。' + (reason ? '理由: ' + reason : ''));
@@ -1338,23 +1330,39 @@
       return d.innerHTML;
     }
 
-    /** 認証状態に応じてタスクの取得元を切り替える */
+    /** 現在有効なストア（保存先）。読み書きは必ずここを通す */
+    function activeStore() {
+      return window.VCV_STORE ? window.VCV_STORE.current : null;
+    }
+
+    /** ストアから届いたタスクを描画用に受け取る */
+    function onTasksChanged(next) {
+      tasks = next;
+      renderKanban();
+    }
+
+    /**
+     * 認証状態に応じて保存先を切り替える。
+     * 代表ログイン中は Firestore、それ以外は端末内保存（体験版）。
+     * Firestore に繋げなかった場合は体験版へ退避し、画面は止めない。
+     */
     async function switchTaskSource(live) {
-      if (detachTaskSubscription) { detachTaskSubscription(); detachTaskSubscription = null; }
-      if (live && window.VCV_DATA) {
+      if (!window.VCV_STORE) { console.error('[vcv] ストレージ層を読み込めていません'); return; }
+      if (live) {
         try {
-          detachTaskSubscription = await window.VCV_DATA.subscribeTasks((docs) => {
-            tasks = docs;
-            renderKanban();
-          });
+          await window.VCV_STORE.use('firebase', onTasksChanged);
           return;
         } catch (err) {
           console.error('[vcv] tasks subscribe failed', err);
-          addChat('manager', 'タスクの本番同期に失敗しました。デモデータを表示します。');
+          // 本番に繋がっていないのに「Live同期中」と見せない。
+          // 実際の保存先と表示を必ず一致させる。
+          const badge = document.getElementById('modeBadge');
+          badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
+          badge.innerText = '⚠️ 本番同期エラー（端末内データ表示中）';
+          addChat('manager', 'タスクの本番同期に失敗しました。端末内のデータを表示します。この状態での承認は本番DBに保存されません。');
         }
       }
-      tasks = MOCK_TASKS.map(t => ({ ...t }));
-      renderKanban();
+      await window.VCV_STORE.use('local', onTasksChanged);
     }
 
     let chatLogs = [
@@ -1377,8 +1385,8 @@
     window.addEventListener('DOMContentLoaded', () => {
       updateStoreNamesUI();
       renderLauncher();
-      renderKanban();
       renderChat();
+      switchTaskSource(false);   // 既定は体験版（端末内保存）。ログイン成功時に切り替わる
       setInterval(() => {
         document.getElementById('roomWallClock').innerText = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
       }, 1000);
