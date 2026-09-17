@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>バーチャル店舗統合ルーム</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#059669">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ゆだやStore">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -128,6 +135,10 @@
 
         <button onclick="openLauncherModal()" class="px-3 py-1.5 bg-gradient-to-b from-amber-400 to-amber-500 text-amber-950 font-black text-xs rounded-2xl border-2 border-amber-600 shadow-sm flex items-center gap-1">
           <span>🧰</span><span>アプリ棚</span>
+        </button>
+
+        <button onclick="openDataModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold border border-slate-300 flex items-center gap-1 shadow-sm">
+          <span>💾</span><span>データ</span>
         </button>
 
         <!-- Auth / Profile -->
@@ -675,6 +686,40 @@
     </div>
   </div>
 
+  <!-- MODAL: データの書き出し / 読み込み -->
+  <div id="dataModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-slate-400 max-w-md w-full overflow-hidden">
+      <div class="px-5 py-3 bg-slate-600 text-white flex items-center justify-between">
+        <h3 class="font-black text-sm">💾 データの書き出し・読み込み</h3>
+        <button onclick="closeDataModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white font-black">&times;</button>
+      </div>
+      <div class="p-5 bg-slate-50 space-y-4 text-xs">
+        <div id="dataStoreInfo" class="p-3 rounded-2xl border font-bold leading-relaxed"></div>
+
+        <div class="space-y-2">
+          <button onclick="exportDataFile()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black shadow-sm">
+            ⬇️ JSONファイルに書き出す
+          </button>
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            現在のタスクをファイルに保存します。バックアップや、別の端末へ移すときに使います。
+          </p>
+        </div>
+
+        <div id="dataImportBlock" class="space-y-2 pt-1 border-t border-slate-200">
+          <button onclick="document.getElementById('dataImportInput').click()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-amber-950 rounded-2xl font-black shadow-sm">
+            ⬆️ JSONファイルから読み込む
+          </button>
+          <input id="dataImportInput" type="file" accept="application/json,.json" class="hidden" onchange="importDataFile(event)">
+          <p class="text-[11px] text-rose-700 font-bold leading-relaxed">
+            ⚠️ 読み込むと、いまのタスクはすべて置き換わります。先に書き出しておくことをおすすめします。
+          </p>
+        </div>
+
+        <div id="dataResult" class="hidden p-3 rounded-2xl font-black"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT: LOGIC & AUDIO -->
   <script>
     let currentStoreKey = 'store1';
@@ -1104,6 +1149,102 @@
         box.replaceChildren(placeholder);
       });
     };
+    /* ===== データの書き出し / 読み込み ===== */
+
+    function showDataResult(html, ok) {
+      const el = document.getElementById('dataResult');
+      el.classList.remove('hidden');
+      el.className = ok
+        ? 'p-3 rounded-2xl font-black bg-emerald-100 text-emerald-900 border border-emerald-300'
+        : 'p-3 rounded-2xl font-black bg-rose-100 text-rose-900 border border-rose-300';
+      el.innerHTML = html;
+    }
+
+    window.openDataModal = function() {
+      playTapSound(620);
+      const store = activeStore();
+      const info = document.getElementById('dataStoreInfo');
+      const importBlock = document.getElementById('dataImportBlock');
+      document.getElementById('dataResult').classList.add('hidden');
+      document.getElementById('dataImportInput').value = '';
+
+      if (!store) {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-rose-50 text-rose-900 border-rose-300';
+        info.textContent = '保存先が用意できていません。ページを再読み込みしてください。';
+        importBlock.classList.add('hidden');
+      } else if (store.kind === 'firebase') {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-rose-50 text-rose-900 border-rose-300';
+        info.innerHTML = '現在の保存先: <strong>本番DB (Firestore)</strong><br>'
+          + '本番DBへの一括読み込みは、既存のデータを壊すため用意していません。書き出し（バックアップ）のみ使えます。';
+        importBlock.classList.add('hidden');
+      } else {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-emerald-50 text-emerald-900 border-emerald-300';
+        info.innerHTML = '現在の保存先: <strong>この端末の中</strong>（体験版）<br>'
+          + 'ブラウザのデータを消すと失われます。大事な内容は書き出しておいてください。';
+        importBlock.classList.remove('hidden');
+      }
+
+      document.getElementById('dataModal').classList.remove('hidden');
+    };
+
+    window.closeDataModal = function() { playTapSound(400); document.getElementById('dataModal').classList.add('hidden'); };
+
+    window.exportDataFile = async function() {
+      const store = activeStore();
+      if (!store) { showDataResult('⚠️ 保存先が用意できていません。', false); return; }
+      playTapSound(760);
+      let payload;
+      try {
+        payload = await store.exportAll();
+      } catch (err) {
+        showDataResult('⚠️ <strong>書き出しに失敗しました。</strong><br>' + escapeHtml(String((err && err.message) || err)), false);
+        return;
+      }
+
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vcv-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showDataResult('✅ <strong>書き出しました。</strong><br>タスク ' + payload.tasks.length + ' 件', true);
+    };
+
+    window.importDataFile = async function(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+
+      const store = activeStore();
+      if (!store || !store.canImport) {
+        showDataResult('⚠️ この保存先では読み込みできません。', false);
+        return;
+      }
+      if (!confirm('いまのタスクはすべて置き換わります。よろしいですか？')) return;
+
+      playTapSound(520);
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch (err) {
+        showDataResult('⚠️ <strong>ファイルを読めませんでした。</strong><br>JSONとして壊れているようです。', false);
+        return;
+      }
+      try {
+        await store.importAll(parsed);
+      } catch (err) {
+        showDataResult('⚠️ <strong>読み込めませんでした。</strong><br>' + escapeHtml(String((err && err.message) || err)), false);
+        return;
+      }
+      showDataResult('✅ <strong>読み込みました。</strong><br>タスク ' + tasks.length + ' 件を表示しています。', true);
+      addChat('manager', 'バックアップファイルからデータを読み込みました。');
+    };
+
     window.closeQrModal = function() { playTapSound(400); document.getElementById('qrModal').classList.add('hidden'); };
 
     window.closeAppModal = function() { playTapSound(400); document.getElementById('appViewerModal').classList.add('hidden'); document.getElementById('appIframe').src = ''; };
@@ -1382,11 +1523,23 @@
     }
     function addChat(id, text) { chatLogs.push({ sender: id, text }); renderChat(); }
 
+    /**
+     * 「ホーム画面に追加」で使えるようにする。
+     * file:// で直接開いた場合は登録できないので何もしない（エラーも出さない）。
+     */
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .catch((err) => console.warn('[vcv] Service Worker を登録できませんでした', err));
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       updateStoreNamesUI();
       renderLauncher();
       renderChat();
       switchTaskSource(false);   // 既定は体験版（端末内保存）。ログイン成功時に切り替わる
+      registerServiceWorker();
       setInterval(() => {
         document.getElementById('roomWallClock').innerText = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
       }, 1000);
