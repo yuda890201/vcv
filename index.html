@@ -18,6 +18,7 @@
   <script type="module" src="./src/app-firebase.js"></script>
   <script type="module" src="./src/qr.js"></script>
   <script type="module" src="./src/storage/index.js"></script>
+  <script type="module" src="./src/app-status.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -637,6 +638,7 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">📱</span>
           <h4 class="font-black text-sm" id="activeAppTitle">自作店舗アプリ</h4>
+          <span id="activeAppStatus" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-full"></span>
         </div>
         <div class="flex items-center gap-2">
           <a id="activeAppExternalLink" href="#" target="_blank" class="px-3 py-1 bg-emerald-800 text-white rounded-xl text-xs font-bold">別タブで開く</a>
@@ -1096,6 +1098,17 @@
         name.textContent = app.title;
         btn.appendChild(name);
 
+        // アプリから状態が返ってきていれば出す。返ってこなければ何も出ない
+        const st = window.VCV_STATUS ? window.VCV_STATUS.get(app.repo) : null;
+        if (st) {
+          const level = (st.badge && st.badge.level) || 'info';
+          const line = document.createElement('div');
+          line.className = 'mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-lg inline-block '
+            + (STATUS_STYLES[level] || STATUS_STYLES.info);
+          line.textContent = st.summary + (st.badge && st.badge.count ? ` (${st.badge.count})` : '');
+          btn.appendChild(line);
+        }
+
         return btn;
       }));
     }
@@ -1117,9 +1130,48 @@
       playTapSound(600);
       document.getElementById('activeAppTitle').innerText = title;
       document.getElementById('activeAppExternalLink').href = appUrl(repo);
-      document.getElementById('appIframe').src = appUrl(repo);
+      const frame = document.getElementById('appIframe');
+      frame.src = appUrl(repo);
       document.getElementById('appViewerModal').classList.remove('hidden');
+
+      // 既に受け取っている状態があれば先に出し、読み込み後に問い合わせ直す
+      renderAppStatus(repo);
+      frame.onload = () => {
+        if (window.VCV_STATUS) window.VCV_STATUS.bind(frame, repo);
+        askAppStatus(frame, repo);
+      };
     };
+
+    /* ===== アプリ状態連携（docs/APP_STATUS_PROTOCOL.md v1）===== */
+
+    const STATUS_STYLES = {
+      ok:    'bg-emerald-100 text-emerald-900 border border-emerald-300',
+      info:  'bg-sky-100 text-sky-900 border border-sky-300',
+      warn:  'bg-amber-100 text-amber-900 border border-amber-300',
+      alert: 'bg-rose-100 text-rose-900 border border-rose-300'
+    };
+
+    /** 受け取っている状態をアプリモーダルのヘッダーに出す。無ければ隠す */
+    function renderAppStatus(repo) {
+      const el = document.getElementById('activeAppStatus');
+      const st = window.VCV_STATUS ? window.VCV_STATUS.get(repo) : null;
+      if (!st) { el.classList.add('hidden'); el.textContent = ''; return; }
+      const level = (st.badge && st.badge.level) || 'info';
+      const count = st.badge && st.badge.count ? ` (${st.badge.count})` : '';
+      el.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (STATUS_STYLES[level] || STATUS_STYLES.info);
+      el.textContent = st.summary + count;
+      el.classList.remove('hidden');
+    }
+
+    /**
+     * アプリに状態を問い合わせる。
+     * 未対応のアプリは応答しないが、それが正常。何も起きないだけ。
+     */
+    async function askAppStatus(frame, repo) {
+      if (!window.VCV_STATUS) return;
+      const st = await window.VCV_STATUS.request(frame, repo);
+      if (st) { renderAppStatus(repo); renderLauncher(); }
+    }
 
     /** 店用スマホへの受け渡しQRを表示する（A案: URLのみ） */
     window.openQrModal = function(repo, title) {
@@ -1247,7 +1299,13 @@
 
     window.closeQrModal = function() { playTapSound(400); document.getElementById('qrModal').classList.add('hidden'); };
 
-    window.closeAppModal = function() { playTapSound(400); document.getElementById('appViewerModal').classList.add('hidden'); document.getElementById('appIframe').src = ''; };
+    window.closeAppModal = function() {
+      playTapSound(400);
+      if (window.VCV_STATUS) window.VCV_STATUS.unbind();
+      document.getElementById('appViewerModal').classList.add('hidden');
+      document.getElementById('appIframe').src = '';
+      document.getElementById('activeAppStatus').classList.add('hidden');
+    };
     window.openLauncherModal = function() { playTapSound(650); document.getElementById('launcherModal').classList.remove('hidden'); };
     window.closeLauncherModal = function() { playTapSound(400); document.getElementById('launcherModal').classList.add('hidden'); };
 
@@ -1540,6 +1598,13 @@
       renderChat();
       switchTaskSource(false);   // 既定は体験版（端末内保存）。ログイン成功時に切り替わる
       registerServiceWorker();
+      if (window.VCV_STATUS) {
+        window.VCV_STATUS.onPush((st) => {
+          renderLauncher();
+          const open = document.getElementById('appViewerModal');
+          if (open && !open.classList.contains('hidden')) renderAppStatus(st.app_id);
+        });
+      }
       setInterval(() => {
         document.getElementById('roomWallClock').innerText = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
       }, 1000);
