@@ -12,6 +12,7 @@
  */
 
 import { SEED_TASKS } from './seed-tasks.js';
+import { SEED_STAFF } from './seed-staff.js';
 
 const STORAGE_KEY = 'vcv:tasks';
 
@@ -59,6 +60,11 @@ export function createLocalStore() {
     kind: 'local',
     /** 端末内保存なので取り込みを許可してよい */
     canImport: true,
+
+    /** 体験版の名簿。コードにはダミー表記しか置かない */
+    async listStaff() {
+      return SEED_STAFF.map((m) => ({ ...m }));
+    },
 
     async start(onChange) {
       listener = onChange;

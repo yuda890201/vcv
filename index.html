@@ -320,7 +320,7 @@
             </div>
             <div class="w-8 h-5 bg-sky-600 rounded-b-xl border border-sky-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-manager" class="text-[10px] font-black text-sky-900 bg-white/90 px-1.5 rounded-full shadow border border-sky-200">田中 (店長)</span>
+          <span id="badge-manager" class="text-[10px] font-black text-sky-900 bg-white/90 px-1.5 rounded-full shadow border border-sky-200"></span>
         </div>
 
         <!-- 2. 厨房担当AI -->
@@ -340,7 +340,7 @@
             </div>
             <div class="w-8 h-5 bg-emerald-600 rounded-b-xl border border-emerald-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-kitchen" class="text-[10px] font-black text-emerald-900 bg-white/90 px-1.5 rounded-full shadow border border-emerald-200">グエン (厨房)</span>
+          <span id="badge-kitchen" class="text-[10px] font-black text-emerald-900 bg-white/90 px-1.5 rounded-full shadow border border-emerald-200"></span>
         </div>
 
         <!-- 3. リーダーAI -->
@@ -360,7 +360,7 @@
             </div>
             <div class="w-8 h-5 bg-indigo-600 rounded-b-xl border border-indigo-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-register" class="text-[10px] font-black text-indigo-900 bg-white/90 px-1.5 rounded-full shadow border border-indigo-200">佐藤 (リーダー)</span>
+          <span id="badge-register" class="text-[10px] font-black text-indigo-900 bg-white/90 px-1.5 rounded-full shadow border border-indigo-200"></span>
         </div>
 
         <!-- 4. じい君 -->
@@ -375,7 +375,7 @@
             </div>
             <div class="w-9 h-5 bg-amber-600 rounded-b-xl border border-amber-800 -mt-1 shadow"></div>
           </div>
-          <span class="text-[10px] font-black text-amber-950 bg-white/90 px-1.5 rounded-full shadow border border-amber-300">じい君 (相談役)</span>
+          <span id="badge-jiikun" class="text-[10px] font-black text-amber-950 bg-white/90 px-1.5 rounded-full shadow border border-amber-300"></span>
         </div>
 
       </div>
@@ -539,7 +539,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">店長AI (事務所)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameManager" value="田中 (店長)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameManager" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatManager" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="🧢">🧢 キャップ</option>
                 <option value="👔">👔 ネクタイ</option>
@@ -551,7 +551,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">厨房AI (フライヤー)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameKitchen" value="グエン (厨房)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameKitchen" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatKitchen" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="👨‍🍳">👨‍🍳 コック帽</option>
                 <option value="🍗">🍗 チキン</option>
@@ -563,7 +563,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">リーダーAI (レジ)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameRegister" value="佐藤 (リーダー)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameRegister" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatRegister" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="🎧">🎧 インカム</option>
                 <option value="🐱">🐱 ネコ耳</option>
@@ -1340,7 +1340,33 @@
     // デモモード: 下記モックを操作（Firestoreへは一切書き込まない）
     // 代表ログイン時: Firestore の tasks コレクションをリアルタイム購読
 
-    const ASSIGNEE_LABELS = { manager: '田中 (店長)', kitchen: 'グエン (厨房)', register: '佐藤 (リーダー)', jiikun: 'じい君 (相談役)' };
+    /**
+     * 名簿（設計ルール3）。ストアから配られる。
+     * 実名はコードに置かず、代表ログイン時に Firestore config/staff から差し替わる。
+     */
+    let staffRoster = [];
+    const ASSIGNEE_LABELS = {};
+
+    /** 名簿を取り直して、フロアの名札・着せ替え欄・カンバンに反映する */
+    async function refreshStaff() {
+      const store = activeStore();
+      if (!store || typeof store.listStaff !== 'function') return;
+      try {
+        staffRoster = await store.listStaff();
+      } catch (err) {
+        console.warn('[vcv] 名簿を取得できませんでした', err);
+        return;
+      }
+      Object.keys(ASSIGNEE_LABELS).forEach((k) => delete ASSIGNEE_LABELS[k]);
+      staffRoster.forEach((m) => {
+        ASSIGNEE_LABELS[m.id] = m.label;
+        const badge = document.getElementById('badge-' + m.id);
+        if (badge) badge.textContent = m.label;
+        const input = document.getElementById('inputName' + m.id.charAt(0).toUpperCase() + m.id.slice(1));
+        if (input && !input.value) input.value = m.label;
+      });
+      renderKanban();
+    }
 
     /**
      * 画面が表示しているタスク一覧。
@@ -1550,6 +1576,7 @@
       if (live) {
         try {
           await window.VCV_STORE.use('firebase', onTasksChanged);
+          await refreshStaff();
           return;
         } catch (err) {
           console.error('[vcv] tasks subscribe failed', err);
@@ -1562,6 +1589,7 @@
         }
       }
       await window.VCV_STORE.use('local', onTasksChanged);
+      await refreshStaff();
     }
 
     let chatLogs = [

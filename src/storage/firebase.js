@@ -9,6 +9,7 @@
  */
 
 import { ensureFirebase } from '../app-firebase.js';
+import { SEED_STAFF } from './seed-staff.js';
 
 export function createFirebaseStore() {
   let detach = null;
@@ -20,6 +21,24 @@ export function createFirebaseStore() {
      * 書き出し（バックアップ）のみ許可する。
      */
     canImport: false,
+
+    /**
+     * 名簿を Firestore の config/staff から取得する。
+     * 未登録なら役割だけのダミーを返す（画面は名前無しにならない）。
+     */
+    async listStaff() {
+      const { db, storeMod } = await ensureFirebase();
+      const snap = await storeMod.getDoc(storeMod.doc(db, 'config', 'staff'));
+      const members = snap.exists() ? snap.data().members : null;
+      if (!Array.isArray(members) || !members.length) return SEED_STAFF.map((m) => ({ ...m }));
+      // 既定の並びと役割は保ちつつ、登録されている表示名だけ差し替える
+      return SEED_STAFF.map((base) => {
+        const found = members.find((m) => m && m.id === base.id);
+        return found && typeof found.label === 'string' && found.label.trim()
+          ? { ...base, label: found.label.trim() }
+          : { ...base };
+      });
+    },
 
     async start(onChange) {
       const { db, storeMod } = await ensureFirebase();
