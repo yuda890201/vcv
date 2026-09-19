@@ -99,7 +99,7 @@
 
   if (!isFirebaseConfigured()) {
     loginBtn.disabled = true;
-    say('⚠️ <strong>Firebase 未設定です。</strong><br>先に <code>scripts/setup-yudaya.ps1</code> を実行して apiKey / appId を設定してください。', 'err');
+    say('⚠️ <strong>Firebase 未設定です。</strong><br>先に <code>scripts/yudaya-setup.ps1</code> を実行して apiKey / appId を設定してください。', 'err');
     throw new Error('firebase not configured');
   }
 

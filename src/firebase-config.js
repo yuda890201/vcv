@@ -10,7 +10,7 @@
  *   このファイルに実店舗名・住所・スタッフ実名などを書かないこと。
  *   それらは Firestore の config/stores（代表のみ読取可）に置き、認証後に取得します。
  *
- * 値は scripts/setup-yudaya.ps1 が自動で書き込みます（手書きでも可）。
+ * 値は scripts/yudaya-setup.ps1 が自動で書き込みます（手書きでも可）。
  */
 
 export const firebaseConfig = {
