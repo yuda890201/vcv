@@ -4,11 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>バーチャル店舗統合ルーム</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#059669">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ゆだやStore">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script type="module" src="./src/app-firebase.js"></script>
+  <script type="module" src="./src/qr.js"></script>
+  <script type="module" src="./src/storage/index.js"></script>
+  <script type="module" src="./src/app-status.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -62,6 +72,21 @@
 
     @keyframes bus-run { 0% { transform: translateX(-120px); } 100% { transform: translateX(580px); } }
     .bus-animate { animation: bus-run 12s linear infinite; }
+
+    /* 代表承認の朱肉スタンプ 💮 (GPU支援 transform/opacity のみ) */
+    @keyframes stamp-press {
+      0%   { transform: scale(2.8) rotate(-26deg); opacity: 0; }
+      55%  { transform: scale(0.86) rotate(-10deg); opacity: 1; }
+      72%  { transform: scale(1.08) rotate(-14deg); }
+      100% { transform: scale(1) rotate(-12deg); opacity: 1; }
+    }
+    .stamp-press { animation: stamp-press 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards; }
+    @keyframes stamp-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .stamp-shake { animation: stamp-shake 0.3s ease-in-out; }
   </style>
 </head>
 <body class="mode-day text-slate-800 min-h-screen flex flex-col antialiased select-none" id="appBody">
@@ -105,12 +130,16 @@
         </button>
 
         <button onclick="openTownModal()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-          <i class="fa-solid fa-map-location-dot"></i>
+          <span>🗺️</span>
           <span id="headerStoreName">ゆだや1号店 (モデル店)</span>
         </button>
 
         <button onclick="openLauncherModal()" class="px-3 py-1.5 bg-gradient-to-b from-amber-400 to-amber-500 text-amber-950 font-black text-xs rounded-2xl border-2 border-amber-600 shadow-sm flex items-center gap-1">
           <span>🧰</span><span>アプリ棚</span>
+        </button>
+
+        <button onclick="openDataModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold border border-slate-300 flex items-center gap-1 shadow-sm">
+          <span>💾</span><span>データ</span>
         </button>
 
         <!-- Auth / Profile -->
@@ -291,7 +320,7 @@
             </div>
             <div class="w-8 h-5 bg-sky-600 rounded-b-xl border border-sky-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-manager" class="text-[10px] font-black text-sky-900 bg-white/90 px-1.5 rounded-full shadow border border-sky-200">田中 (店長)</span>
+          <span id="badge-manager" class="text-[10px] font-black text-sky-900 bg-white/90 px-1.5 rounded-full shadow border border-sky-200"></span>
         </div>
 
         <!-- 2. 厨房担当AI -->
@@ -311,7 +340,7 @@
             </div>
             <div class="w-8 h-5 bg-emerald-600 rounded-b-xl border border-emerald-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-kitchen" class="text-[10px] font-black text-emerald-900 bg-white/90 px-1.5 rounded-full shadow border border-emerald-200">グエン (厨房)</span>
+          <span id="badge-kitchen" class="text-[10px] font-black text-emerald-900 bg-white/90 px-1.5 rounded-full shadow border border-emerald-200"></span>
         </div>
 
         <!-- 3. リーダーAI -->
@@ -331,7 +360,7 @@
             </div>
             <div class="w-8 h-5 bg-indigo-600 rounded-b-xl border border-indigo-800 -mt-1 shadow"></div>
           </div>
-          <span id="badge-register" class="text-[10px] font-black text-indigo-900 bg-white/90 px-1.5 rounded-full shadow border border-indigo-200">佐藤 (リーダー)</span>
+          <span id="badge-register" class="text-[10px] font-black text-indigo-900 bg-white/90 px-1.5 rounded-full shadow border border-indigo-200"></span>
         </div>
 
         <!-- 4. じい君 -->
@@ -346,7 +375,7 @@
             </div>
             <div class="w-9 h-5 bg-amber-600 rounded-b-xl border border-amber-800 -mt-1 shadow"></div>
           </div>
-          <span class="text-[10px] font-black text-amber-950 bg-white/90 px-1.5 rounded-full shadow border border-amber-300">じい君 (相談役)</span>
+          <span id="badge-jiikun" class="text-[10px] font-black text-amber-950 bg-white/90 px-1.5 rounded-full shadow border border-amber-300"></span>
         </div>
 
       </div>
@@ -379,6 +408,55 @@
     </div>
 
   </main>
+
+  <!-- ================= MODAL: 代表承認（Human-in-the-Loop / 朱肉スタンプ💮） ================= -->
+  <div id="approvalModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-rose-400 max-w-lg w-full overflow-hidden">
+      <div class="px-6 py-3.5 bg-rose-600 text-white flex items-center justify-between">
+        <h3 class="font-black text-base flex items-center gap-2"><span>💮</span> 代表承認</h3>
+        <button onclick="closeApprovalModal()" class="text-2xl font-black" aria-label="閉じる">&times;</button>
+      </div>
+
+      <div class="p-5 space-y-3 bg-slate-50 text-xs">
+        <div class="flex items-center justify-between text-[10px] font-black text-slate-400">
+          <span id="approvalTaskAssignee">担当</span>
+          <span id="approvalTaskId">T-000</span>
+        </div>
+        <h4 class="font-black text-sm text-slate-800 leading-snug" id="approvalTaskTitle">タスク名</h4>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+          <div>
+            <div class="text-[10px] font-black text-slate-500 mb-0.5">サマリー</div>
+            <div class="text-slate-800" id="approvalTaskSummary">-</div>
+          </div>
+          <div id="approvalDiffWrap">
+            <div class="text-[10px] font-black text-slate-500 mb-0.5">変更内容プレビュー</div>
+            <div class="font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl px-2.5 py-2 leading-relaxed break-all" id="approvalTaskDiff">-</div>
+          </div>
+          <div id="approvalDbWrap">
+            <div class="text-[10px] font-black text-slate-500 mb-0.5">反映先DB</div>
+            <div class="text-slate-800 font-bold" id="approvalTaskDb">-</div>
+          </div>
+        </div>
+
+        <!-- 朱肉スタンプ欄 -->
+        <div class="flex items-center justify-center h-28 bg-white rounded-2xl border-2 border-dashed border-rose-300" id="approvalStampArea">
+          <span class="text-[11px] text-slate-400 font-bold" id="approvalStampHint">承認すると、ここに代表印が押されます</span>
+        </div>
+
+        <div id="approvalResult" class="hidden p-3 rounded-2xl font-black text-xs"></div>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-1" id="approvalActions">
+          <button onclick="rejectCurrentTask()" class="py-2.5 bg-white hover:bg-slate-100 text-slate-700 border-2 border-slate-300 rounded-xl font-black text-xs transition">
+            ↩︎ 差し戻す
+          </button>
+          <button onclick="approveCurrentTask()" class="py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-xs shadow transition">
+            💮 承認印を押す
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= MODAL: お弁当値引きシール「ペタッと」アクション (GAME) ================= -->
   <div id="discountGameModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
@@ -461,7 +539,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">店長AI (事務所)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameManager" value="田中 (店長)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameManager" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatManager" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="🧢">🧢 キャップ</option>
                 <option value="👔">👔 ネクタイ</option>
@@ -473,7 +551,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">厨房AI (フライヤー)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameKitchen" value="グエン (厨房)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameKitchen" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatKitchen" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="👨‍🍳">👨‍🍳 コック帽</option>
                 <option value="🍗">🍗 チキン</option>
@@ -485,7 +563,7 @@
           <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border">
             <span class="font-black text-slate-800">リーダーAI (レジ)</span>
             <div class="flex gap-1.5">
-              <input type="text" id="inputNameRegister" value="佐藤 (リーダー)" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
+              <input type="text" id="inputNameRegister" value="" class="px-2 py-1 border rounded-lg text-xs w-28 font-bold">
               <select id="selectHatRegister" class="px-2 py-1 border rounded-lg text-xs">
                 <option value="🎧">🎧 インカム</option>
                 <option value="🐱">🐱 ネコ耳</option>
@@ -560,6 +638,7 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">📱</span>
           <h4 class="font-black text-sm" id="activeAppTitle">自作店舗アプリ</h4>
+          <span id="activeAppStatus" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-full"></span>
         </div>
         <div class="flex items-center gap-2">
           <a id="activeAppExternalLink" href="#" target="_blank" class="px-3 py-1 bg-emerald-800 text-white rounded-xl text-xs font-bold">別タブで開く</a>
@@ -578,20 +657,67 @@
         <button onclick="closeLauncherModal()" class="text-3xl font-black">&times;</button>
       </div>
       <div class="flex-1 bg-amber-50/50 p-5 overflow-y-auto space-y-4 text-xs">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button onclick="openAppModal('shift-management-app', 'シフト管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📅</span><div class="font-black mt-1">シフト管理アプリ</div></button>
-          <button onclick="openAppModal('work_schedule', 'ワークスケジュール')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">⏱️</span><div class="font-black mt-1">ワークスケジュール</div></button>
-          <button onclick="openAppModal('kintai_error_feedback', '勤怠エラーフィードバック')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">⚠️</span><div class="font-black mt-1">勤怠エラーフィードバック</div></button>
-          <button onclick="openAppModal('incentive-board', 'インセンティブボード')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🏆</span><div class="font-black mt-1">インセンティブボード</div></button>
-          <button onclick="openAppModal('kinko-app', '金庫・レジ引継ぎアプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">💰</span><div class="font-black mt-1">金庫・レジ引継ぎ</div></button>
-          <button onclick="openAppModal('kitte_manage', '切手・金券管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">✉️</span><div class="font-black mt-1">切手・金券管理</div></button>
-          <button onclick="openAppModal('purchase-limit', '購入制限管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🛑</span><div class="font-black mt-1">購入制限管理</div></button>
-          <button onclick="openAppModal('FF_manage', 'FF調理・廃棄管理アプリ')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🍗</span><div class="font-black mt-1">FF調理・廃棄管理</div></button>
-          <button onclick="openAppModal('shelf-review-app', '棚点検・売場レビュー')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">🛒</span><div class="font-black mt-1">棚点検・売場レビュー</div></button>
-          <button onclick="openAppModal('store-communication-app', '店舗コミュニケーション')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">💬</span><div class="font-black mt-1">店舗連絡板</div></button>
-          <button onclick="openAppModal('store-feedback', '店舗フィードバック')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📋</span><div class="font-black mt-1">店舗フィードバック</div></button>
-          <button onclick="openAppModal('bunseki-tool', '店舗分析ツール')" class="p-3 bg-white rounded-2xl border text-left shadow-sm"><span class="text-2xl">📊</span><div class="font-black mt-1">店舗分析ツール</div></button>
+        <p class="text-[11px] text-amber-900/80 font-bold">📱 のアプリは店用スマホで操作するもの。タッチするとQRコードが出ます。</p>
+        <div id="launcherGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QR 受け渡し（店用スマホへ） -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-sky-400 max-w-sm w-full overflow-hidden">
+      <div class="px-5 py-3 bg-sky-500 text-sky-950 flex items-center justify-between">
+        <h3 class="font-black text-sm">📱 店用スマホで開く</h3>
+        <button onclick="closeQrModal()" class="w-8 h-8 rounded-full bg-sky-800 text-white font-black">&times;</button>
+      </div>
+      <div class="p-5 bg-sky-50/60 space-y-3 text-center">
+        <div class="font-black text-sm text-slate-800" id="qrAppTitle">アプリ名</div>
+        <div id="qrCanvas" class="mx-auto w-52 h-52 bg-white rounded-2xl border-2 border-sky-200 p-2 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-400">QRを生成中…</span>
+        </div>
+        <p class="text-[11px] font-bold text-slate-600 leading-relaxed">
+          店用スマホのカメラで読み取ってください。<br>
+          スマホ側でのログインは今まで通り必要です。
+        </p>
+        <div id="qrUrl" class="text-[10px] text-slate-500 break-all font-mono bg-white rounded-xl border px-2 py-1.5"></div>
+        <button id="qrFallbackBtn" class="w-full py-2.5 bg-slate-200 text-slate-700 rounded-2xl font-black text-xs">
+          このままタブレットで開く
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: データの書き出し / 読み込み -->
+  <div id="dataModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border-4 border-slate-400 max-w-md w-full overflow-hidden">
+      <div class="px-5 py-3 bg-slate-600 text-white flex items-center justify-between">
+        <h3 class="font-black text-sm">💾 データの書き出し・読み込み</h3>
+        <button onclick="closeDataModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white font-black">&times;</button>
+      </div>
+      <div class="p-5 bg-slate-50 space-y-4 text-xs">
+        <div id="dataStoreInfo" class="p-3 rounded-2xl border font-bold leading-relaxed"></div>
+
+        <div class="space-y-2">
+          <button onclick="exportDataFile()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black shadow-sm">
+            ⬇️ JSONファイルに書き出す
+          </button>
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            現在のタスクをファイルに保存します。バックアップや、別の端末へ移すときに使います。
+          </p>
+        </div>
+
+        <div id="dataImportBlock" class="space-y-2 pt-1 border-t border-slate-200">
+          <button onclick="document.getElementById('dataImportInput').click()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-amber-950 rounded-2xl font-black shadow-sm">
+            ⬆️ JSONファイルから読み込む
+          </button>
+          <input id="dataImportInput" type="file" accept="application/json,.json" class="hidden" onchange="importDataFile(event)">
+          <p class="text-[11px] text-rose-700 font-bold leading-relaxed">
+            ⚠️ 読み込むと、いまのタスクはすべて置き換わります。先に書き出しておくことをおすすめします。
+          </p>
+        </div>
+
+        <div id="dataResult" class="hidden p-3 rounded-2xl font-black"></div>
       </div>
     </div>
   </div>
@@ -602,27 +728,28 @@
     let audioCtx = null;
     let isLiveAuthenticated = false;
 
-    // カモフラージュ定義 (未ログイン: ダミー / 代表ログイン時: 本物)
-    const STORE_NAMES = {
-      demo: {
-        brandTitle: 'ゆだやLab 店舗統合ルーム',
-        brandSub: 'バーチャルコンビニ サンプル運営プラットフォーム',
-        store1: 'ゆだや1号店 (モデル店)',
-        store2: 'ゆだや2号店 (サンプル店)',
-        desc1: '昼ピーク・ランチ需要の高い旗艦拠点。',
-        desc2: '夜勤帯オペレーションと金銭管理の拠点。',
-        road: '🛣️ 福岡・メイン通り (循環バス運行中)'
-      },
-      live: {
-        brandTitle: '株式会社ゆだや 店舗統合ルーム',
-        brandSub: '株式会社ゆだや 自律AIオペレーション＆店舗DXハブ',
-        store1: '博多住吉通り店',
-        store2: '福岡清川二丁目店',
-        desc1: '住吉通り沿い・キャナルシティ近く。昼ピーク・観光・通勤客の多い旗艦拠点。',
-        desc2: '日赤通り・百年橋通り近く。住宅・ビジネス混在エリアで夜勤帯需要も高い拠点。',
-        road: '🛣️ 福岡市 住吉通り（博多駅 ⇄ 渡辺通 方面・西鉄バス運行）'
-      }
+    // ================= カモフラージュ定義 =================
+    // ⚠️ 実店舗名・住所・周辺情報をこのファイルに書かないこと。
+    //    GitHub Pages で配信される＝全世界がソースを読めるため。
+    //    実店舗情報は Firestore の config/stores（代表のみ読取可）に置き、
+    //    認証成功後にのみ LIVE_STORE_NAMES へ流し込まれる。
+    const DEMO_STORE_NAMES = {
+      brandTitle: 'ゆだやLab 店舗統合ルーム',
+      brandSub: 'バーチャルコンビニ サンプル運営プラットフォーム',
+      store1: 'ゆだや1号店 (モデル店)',
+      store2: 'ゆだや2号店 (サンプル店)',
+      desc1: '昼ピーク・ランチ需要の高い旗艦拠点。',
+      desc2: '夜勤帯オペレーションと金銭管理の拠点。',
+      road: '🛣️ 福岡・メイン通り (循環バス運行中)'
     };
+
+    // 認証後に Firestore から取得した実店舗情報（未認証の間は常に null）
+    let liveStoreNames = null;
+
+    /** 現在表示すべき店舗情報。実店舗情報が無ければ必ずダミーにフォールバックする。 */
+    function activeStoreNames() {
+      return liveStoreNames || DEMO_STORE_NAMES;
+    }
 
     function playTapSound(freq = 600) {
       try {
@@ -642,8 +769,7 @@
     }
 
     function updateStoreNamesUI() {
-      const mode = isLiveAuthenticated ? 'live' : 'demo';
-      const c = STORE_NAMES[mode];
+      const c = activeStoreNames();
       document.getElementById('headerBrandTitle').innerText = c.brandTitle;
       document.getElementById('headerBrandSub').innerText = c.brandSub;
       const curStore = currentStoreKey === 'store1' ? c.store1 : c.store2;
@@ -657,26 +783,126 @@
       document.getElementById('townRoadLabel').innerText = c.road;
     }
 
-    // ログイン処理（モック兼Firebase切り替え）
-    window.handleLogin = function() {
-      playTapSound(750);
-      isLiveAuthenticated = true;
-      document.getElementById('loginBtn').classList.add('hidden');
-      document.getElementById('userProfile').classList.remove('hidden');
-      document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 animate-pulse';
-      document.getElementById('modeBadge').innerText = '🔥 本番Live同期中 (株式会社ゆだや)';
-      updateStoreNamesUI();
-      alert('湯田代表の認証を確認しました！実店舗名（博多住吉通り店・福岡清川二丁目店）および株式会社ゆだや本番モードへ切り替わりました。');
-    };
+    // ================= 認証（Firebase Auth 実接続） =================
+    // 「代表かどうか」はクライアントでUID比較しない。owner-only ドキュメントを
+    // 読めたかどうかで判定する（判定根拠は firestore.rules 側にある）。
+    // src/app-firebase.js が 'vcv:auth-state' イベントで結果を通知してくる。
 
-    window.handleLogout = function() {
-      playTapSound(400);
+    function renderDemoMode(message) {
       isLiveAuthenticated = false;
+      liveStoreNames = null;
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('userProfile').classList.add('hidden');
-      document.getElementById('modeBadge').className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300';
-      document.getElementById('modeBadge').innerText = '🌱 デモ体験中';
+      const badge = document.getElementById('modeBadge');
+      badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300';
+      badge.innerText = '🌱 デモ体験中';
       updateStoreNamesUI();
+      switchTaskSource(false);
+      if (message) addChat('manager', message);
+    }
+
+    function renderLiveMode(detail) {
+      isLiveAuthenticated = true;
+      liveStoreNames = detail.stores;
+      document.getElementById('loginBtn').classList.add('hidden');
+      document.getElementById('userProfile').classList.remove('hidden');
+      document.getElementById('userName').innerText = detail.displayName || '代表';
+      const badge = document.getElementById('modeBadge');
+      badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 animate-pulse';
+      badge.innerText = '🔥 本番Live同期中 (株式会社ゆだや)';
+      updateStoreNamesUI();
+      switchTaskSource(true);
+      addChat('manager', '代表の認証を確認しました。本番モードへ切り替えます。');
+    }
+
+    window.addEventListener('vcv:auth-state', (ev) => {
+      const d = ev.detail || {};
+      if (d.signedIn && d.isOwner) {
+        renderLiveMode(d);
+      } else if (d.signedIn) {
+        // ログインはできたが代表ではない ＝ 実店舗情報は一切渡さずデモのまま
+        renderDemoMode('このアカウントには本番データの閲覧権限がありません。デモモードを継続します。');
+        if (window.VCV_AUTH) window.VCV_AUTH.signOut().catch(() => {});
+        alert('このGoogleアカウントには本番データの閲覧権限がありません。\nデモモードのままご利用いただけます。');
+      } else {
+        renderDemoMode(null);
+      }
+    });
+
+    /** Firebase のエラーコードを「次に何をすればいいか」に翻訳する */
+    function authErrorMessage(code) {
+      const project = 'yudaya-vcv';
+      switch (code) {
+        case 'auth/operation-not-allowed':
+          return 'Google ログインが Firebase 側で有効になっていません。\n\n'
+            + 'Firebase コンソール → Authentication → Sign-in method → Google を「有効」にして保存してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/providers`;
+        case 'auth/unauthorized-domain':
+          return `このドメイン（${location.hostname}）が Firebase の承認済みドメインに入っていません。\n\n`
+            + 'Firebase コンソール → Authentication → Settings → 承認済みドメイン に追加してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/settings`;
+        case 'auth/configuration-not-found':
+          return 'Authentication がまだ開始されていません。\n\n'
+            + 'Firebase コンソール → Authentication → 「始める」を押してから Google を有効化してください。\n'
+            + `https://console.firebase.google.com/project/${project}/authentication/providers`;
+        case 'auth/network-request-failed':
+          return 'ネットワークに接続できませんでした。通信環境を確認して、もう一度お試しください。';
+        case 'auth/popup-blocked':
+          return 'ブラウザがポップアップを遮断しました。ページ遷移方式に切り替えます。\n'
+            + 'もう一度ログインボタンを押してください。';
+        default:
+          return 'ログインに失敗しました: ' + code;
+      }
+    }
+
+    window.handleLogin = async function() {
+      playTapSound(750);
+
+      // 認証モジュール自体が読み込めていないケース（file:// 直開き等）を区別する
+      if (!window.VCV_AUTH) {
+        alert('認証モジュール（src/app-firebase.js）を読み込めていません。\n\n'
+          + 'HTMLファイルを直接ダブルクリックで開いていませんか？\n'
+          + 'ES モジュールは file:// では読み込めません。\n\n'
+          + '  cd (vcvフォルダ)\n'
+          + '  python -m http.server 8000\n\n'
+          + 'を実行して http://localhost:8000 から開いてください。');
+        return;
+      }
+
+      if (!window.VCV_AUTH.isConfigured()) {
+        alert('Firebase 接続設定がまだ未完了です。\n\nscripts/yudaya-setup.ps1 を実行して apiKey / appId を設定してください。\n（設定するまではデモモードのまま動作します）');
+        return;
+      }
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      try {
+        await window.VCV_AUTH.signIn();
+      } catch (err) {
+        const code = (err && err.code) || String(err);
+        console.error('[vcv] sign-in failed', err);
+        if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+          alert(authErrorMessage(code));
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // リダイレクト方式での復帰に失敗した場合もユーザーに理由を伝える
+    window.addEventListener('vcv:auth-error', (ev) => {
+      const code = (ev.detail && ev.detail.code) || '';
+      if (code) alert(authErrorMessage(code));
+    });
+
+    window.handleLogout = async function() {
+      playTapSound(400);
+      try {
+        if (window.VCV_AUTH) await window.VCV_AUTH.signOut();
+      } catch (err) {
+        console.error('[vcv] signOut failed', err);
+      }
+      renderDemoMode(null);
     };
 
     // 時間帯切り替え
@@ -792,8 +1018,8 @@
       currentStoreKey = storeKey;
       closeTownModal();
       updateStoreNamesUI();
-      const mode = isLiveAuthenticated ? 'live' : 'demo';
-      const name = currentStoreKey === 'store1' ? STORE_NAMES[mode].store1 : STORE_NAMES[mode].store2;
+      const c = activeStoreNames();
+      const name = currentStoreKey === 'store1' ? c.store1 : c.store2;
       moveAvatar('manager', 'door', `${name}へ移動しました！`);
       addChat('manager', `店舗ビューを【${name}】へ切り替えました。`);
     };
@@ -820,14 +1046,266 @@
       else if (type === 'breakroom') { moveAvatar('jiikun', 'breakroom', '店舗連絡板を開くぞい！'); openAppModal('store-communication-app', '店舗コミュニケーション'); }
     };
 
+    /**
+     * 自作アプリの登録簿（設計ルール7「アプリごとに対象端末を決める」の実体）
+     *   device: 'tablet' … 店舗タブレットで完結する → iframe で開く
+     *           'phone'  … 店用スマホで操作する     → QR を出して受け渡す
+     * ここに実店舗名・実店舗IDを書かないこと（CLAUDE.md ルール5）。
+     * 将来 Firestore の config/apps へ移す前提で、形を先に揃えてある。
+     */
+    const APP_REGISTRY = [
+      { repo: 'shift-management-app',    title: 'シフト管理アプリ',        emoji: '📅', device: 'tablet' },
+      { repo: 'work_schedule',           title: 'ワークスケジュール',      emoji: '⏱️', device: 'tablet' },
+      { repo: 'kintai_error_feedback',   title: '勤怠エラーフィードバック', emoji: '⚠️', device: 'phone'  },
+      { repo: 'incentive-board',         title: 'インセンティブボード',    emoji: '🏆', device: 'tablet' },
+      { repo: 'kinko-app',               title: '金庫・レジ引継ぎアプリ',  emoji: '💰', device: 'phone'  },
+      { repo: 'kitte_manage',            title: '切手・金券管理アプリ',    emoji: '✉️', device: 'phone'  },
+      { repo: 'purchase-limit',          title: '購入制限管理アプリ',      emoji: '🛑', device: 'phone'  },
+      { repo: 'FF_manage',               title: 'FF調理・廃棄管理アプリ',  emoji: '🍗', device: 'tablet' },
+      { repo: 'shelf-review-app',        title: '棚点検・売場レビュー',    emoji: '🛒', device: 'phone'  },
+      { repo: 'store-communication-app', title: '店舗連絡板',              emoji: '💬', device: 'phone'  },
+      { repo: 'store-feedback',          title: '店舗フィードバック',      emoji: '📋', device: 'phone'  },
+      { repo: 'bunseki-tool',            title: '店舗分析ツール',          emoji: '📊', device: 'phone'  }
+    ];
+
+    const appUrl = (repo) => `https://yuda890201.github.io/${repo}/`;
+    const findApp = (repo) => APP_REGISTRY.find((a) => a.repo === repo) || null;
+
+    /** ランチャーのボタンを登録簿から生成する */
+    function renderLauncher() {
+      const grid = document.getElementById('launcherGrid');
+      if (!grid) return;
+      grid.replaceChildren(...APP_REGISTRY.map((app) => {
+        const btn = document.createElement('button');
+        btn.className = 'p-3 bg-white rounded-2xl border text-left shadow-sm relative';
+        btn.onclick = () => openAppModal(app.repo, app.title);
+
+        const icon = document.createElement('span');
+        icon.className = 'text-2xl';
+        icon.textContent = app.emoji;
+        btn.appendChild(icon);
+
+        if (app.device === 'phone') {
+          const badge = document.createElement('span');
+          badge.className = 'absolute top-2 right-2 text-sm';
+          badge.title = '店用スマホで操作するアプリ';
+          badge.textContent = '📱';
+          btn.appendChild(badge);
+        }
+
+        const name = document.createElement('div');
+        name.className = 'font-black mt-1';
+        name.textContent = app.title;
+        btn.appendChild(name);
+
+        // アプリから状態が返ってきていれば出す。返ってこなければ何も出ない
+        const st = window.VCV_STATUS ? window.VCV_STATUS.get(app.repo) : null;
+        if (st) {
+          const level = (st.badge && st.badge.level) || 'info';
+          const line = document.createElement('div');
+          line.className = 'mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-lg inline-block '
+            + (STATUS_STYLES[level] || STATUS_STYLES.info);
+          line.textContent = st.summary + (st.badge && st.badge.count ? ` (${st.badge.count})` : '');
+          btn.appendChild(line);
+        }
+
+        return btn;
+      }));
+    }
+
+    /**
+     * アプリを開く。対象端末に応じて自動で出し分ける。
+     *   tablet → 今まで通り iframe
+     *   phone  → QR を表示（店用スマホのカメラで読み取ってもらう）
+     */
     window.openAppModal = function(repo, title) {
+      const app = findApp(repo);
+      const label = title || (app && app.title) || repo;
+      if (app && app.device === 'phone') { openQrModal(repo, label); return; }
+      openAppViewer(repo, label);
+    };
+
+    /** タブレットの iframe で開く（QRからの「このままタブレットで開く」も通る） */
+    window.openAppViewer = function(repo, title) {
       playTapSound(600);
       document.getElementById('activeAppTitle').innerText = title;
-      document.getElementById('activeAppExternalLink').href = `https://yuda890201.github.io/${repo}/`;
-      document.getElementById('appIframe').src = `https://yuda890201.github.io/${repo}/`;
+      document.getElementById('activeAppExternalLink').href = appUrl(repo);
+      const frame = document.getElementById('appIframe');
+      frame.src = appUrl(repo);
       document.getElementById('appViewerModal').classList.remove('hidden');
+
+      // 既に受け取っている状態があれば先に出し、読み込み後に問い合わせ直す
+      renderAppStatus(repo);
+      frame.onload = () => {
+        if (window.VCV_STATUS) window.VCV_STATUS.bind(frame, repo);
+        askAppStatus(frame, repo);
+      };
     };
-    window.closeAppModal = function() { playTapSound(400); document.getElementById('appViewerModal').classList.add('hidden'); document.getElementById('appIframe').src = ''; };
+
+    /* ===== アプリ状態連携（docs/APP_STATUS_PROTOCOL.md v1）===== */
+
+    const STATUS_STYLES = {
+      ok:    'bg-emerald-100 text-emerald-900 border border-emerald-300',
+      info:  'bg-sky-100 text-sky-900 border border-sky-300',
+      warn:  'bg-amber-100 text-amber-900 border border-amber-300',
+      alert: 'bg-rose-100 text-rose-900 border border-rose-300'
+    };
+
+    /** 受け取っている状態をアプリモーダルのヘッダーに出す。無ければ隠す */
+    function renderAppStatus(repo) {
+      const el = document.getElementById('activeAppStatus');
+      const st = window.VCV_STATUS ? window.VCV_STATUS.get(repo) : null;
+      if (!st) { el.classList.add('hidden'); el.textContent = ''; return; }
+      const level = (st.badge && st.badge.level) || 'info';
+      const count = st.badge && st.badge.count ? ` (${st.badge.count})` : '';
+      el.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full ' + (STATUS_STYLES[level] || STATUS_STYLES.info);
+      el.textContent = st.summary + count;
+      el.classList.remove('hidden');
+    }
+
+    /**
+     * アプリに状態を問い合わせる。
+     * 未対応のアプリは応答しないが、それが正常。何も起きないだけ。
+     */
+    async function askAppStatus(frame, repo) {
+      if (!window.VCV_STATUS) return;
+      const st = await window.VCV_STATUS.request(frame, repo);
+      if (st) { renderAppStatus(repo); renderLauncher(); }
+    }
+
+    /** 店用スマホへの受け渡しQRを表示する（A案: URLのみ） */
+    window.openQrModal = function(repo, title) {
+      playTapSound(700);
+      const url = appUrl(repo);
+      document.getElementById('qrAppTitle').textContent = title;
+      document.getElementById('qrUrl').textContent = url;
+
+      const box = document.getElementById('qrCanvas');
+      const placeholder = document.createElement('span');
+      placeholder.className = 'text-xs font-bold text-slate-400';
+      placeholder.textContent = 'QRを生成中…';
+      box.replaceChildren(placeholder);
+
+      const fallback = document.getElementById('qrFallbackBtn');
+      fallback.onclick = () => { closeQrModal(); openAppViewer(repo, title); };
+
+      document.getElementById('qrModal').classList.remove('hidden');
+
+      if (!window.VCV_QR) {
+        placeholder.textContent = 'QRモジュールを読み込めませんでした';
+        return;
+      }
+      window.VCV_QR.render(box, url).catch((err) => {
+        console.error('[vcv] QR render failed', err);
+        placeholder.textContent = 'QRの生成に失敗しました';
+        box.replaceChildren(placeholder);
+      });
+    };
+    /* ===== データの書き出し / 読み込み ===== */
+
+    function showDataResult(html, ok) {
+      const el = document.getElementById('dataResult');
+      el.classList.remove('hidden');
+      el.className = ok
+        ? 'p-3 rounded-2xl font-black bg-emerald-100 text-emerald-900 border border-emerald-300'
+        : 'p-3 rounded-2xl font-black bg-rose-100 text-rose-900 border border-rose-300';
+      el.innerHTML = html;
+    }
+
+    window.openDataModal = function() {
+      playTapSound(620);
+      const store = activeStore();
+      const info = document.getElementById('dataStoreInfo');
+      const importBlock = document.getElementById('dataImportBlock');
+      document.getElementById('dataResult').classList.add('hidden');
+      document.getElementById('dataImportInput').value = '';
+
+      if (!store) {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-rose-50 text-rose-900 border-rose-300';
+        info.textContent = '保存先が用意できていません。ページを再読み込みしてください。';
+        importBlock.classList.add('hidden');
+      } else if (store.kind === 'firebase') {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-rose-50 text-rose-900 border-rose-300';
+        info.innerHTML = '現在の保存先: <strong>本番DB (Firestore)</strong><br>'
+          + '本番DBへの一括読み込みは、既存のデータを壊すため用意していません。書き出し（バックアップ）のみ使えます。';
+        importBlock.classList.add('hidden');
+      } else {
+        info.className = 'p-3 rounded-2xl border font-bold leading-relaxed bg-emerald-50 text-emerald-900 border-emerald-300';
+        info.innerHTML = '現在の保存先: <strong>この端末の中</strong>（体験版）<br>'
+          + 'ブラウザのデータを消すと失われます。大事な内容は書き出しておいてください。';
+        importBlock.classList.remove('hidden');
+      }
+
+      document.getElementById('dataModal').classList.remove('hidden');
+    };
+
+    window.closeDataModal = function() { playTapSound(400); document.getElementById('dataModal').classList.add('hidden'); };
+
+    window.exportDataFile = async function() {
+      const store = activeStore();
+      if (!store) { showDataResult('⚠️ 保存先が用意できていません。', false); return; }
+      playTapSound(760);
+      let payload;
+      try {
+        payload = await store.exportAll();
+      } catch (err) {
+        showDataResult('⚠️ <strong>書き出しに失敗しました。</strong><br>' + escapeHtml(String((err && err.message) || err)), false);
+        return;
+      }
+
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vcv-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showDataResult('✅ <strong>書き出しました。</strong><br>タスク ' + payload.tasks.length + ' 件', true);
+    };
+
+    window.importDataFile = async function(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+
+      const store = activeStore();
+      if (!store || !store.canImport) {
+        showDataResult('⚠️ この保存先では読み込みできません。', false);
+        return;
+      }
+      if (!confirm('いまのタスクはすべて置き換わります。よろしいですか？')) return;
+
+      playTapSound(520);
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch (err) {
+        showDataResult('⚠️ <strong>ファイルを読めませんでした。</strong><br>JSONとして壊れているようです。', false);
+        return;
+      }
+      try {
+        await store.importAll(parsed);
+      } catch (err) {
+        showDataResult('⚠️ <strong>読み込めませんでした。</strong><br>' + escapeHtml(String((err && err.message) || err)), false);
+        return;
+      }
+      showDataResult('✅ <strong>読み込みました。</strong><br>タスク ' + tasks.length + ' 件を表示しています。', true);
+      addChat('manager', 'バックアップファイルからデータを読み込みました。');
+    };
+
+    window.closeQrModal = function() { playTapSound(400); document.getElementById('qrModal').classList.add('hidden'); };
+
+    window.closeAppModal = function() {
+      playTapSound(400);
+      if (window.VCV_STATUS) window.VCV_STATUS.unbind();
+      document.getElementById('appViewerModal').classList.add('hidden');
+      document.getElementById('appIframe').src = '';
+      document.getElementById('activeAppStatus').classList.add('hidden');
+    };
     window.openLauncherModal = function() { playTapSound(650); document.getElementById('launcherModal').classList.remove('hidden'); };
     window.closeLauncherModal = function() { playTapSound(400); document.getElementById('launcherModal').classList.add('hidden'); };
 
@@ -858,25 +1336,260 @@
       showBubble(id, lines[id][0]);
     };
 
+    // ================= カンバン（src/types/schema.js 準拠） =================
+    // デモモード: 下記モックを操作（Firestoreへは一切書き込まない）
+    // 代表ログイン時: Firestore の tasks コレクションをリアルタイム購読
+
+    /**
+     * 名簿（設計ルール3）。ストアから配られる。
+     * 実名はコードに置かず、代表ログイン時に Firestore config/staff から差し替わる。
+     */
+    let staffRoster = [];
+    const ASSIGNEE_LABELS = {};
+
+    /** 名簿を取り直して、フロアの名札・着せ替え欄・カンバンに反映する */
+    async function refreshStaff() {
+      const store = activeStore();
+      if (!store || typeof store.listStaff !== 'function') return;
+      try {
+        staffRoster = await store.listStaff();
+      } catch (err) {
+        console.warn('[vcv] 名簿を取得できませんでした', err);
+        return;
+      }
+      Object.keys(ASSIGNEE_LABELS).forEach((k) => delete ASSIGNEE_LABELS[k]);
+      staffRoster.forEach((m) => {
+        ASSIGNEE_LABELS[m.id] = m.label;
+        const badge = document.getElementById('badge-' + m.id);
+        if (badge) badge.textContent = m.label;
+        const input = document.getElementById('inputName' + m.id.charAt(0).toUpperCase() + m.id.slice(1));
+        if (input && !input.value) input.value = m.label;
+      });
+      renderKanban();
+    }
+
+    /**
+     * 画面が表示しているタスク一覧。
+     * 保存処理はここには書かない。ストア(src/storage/)から onChange で流れてくる
+     * ものを描画用に受け取るだけ（設計ルール1）。
+     */
+    let tasks = [];
+    let currentApprovalTaskId = null;
+
+    function assigneeLabel(t) {
+      return t.assignee_name || ASSIGNEE_LABELS[t.assignee] || t.assignee || '担当者';
+    }
+
+    function findTask(id) {
+      return tasks.find(t => t.id === id) || null;
+    }
+
     function renderKanban() {
       const cols = { todo: document.getElementById('col-todo'), progress: document.getElementById('col-progress'), review: document.getElementById('col-review'), approval: document.getElementById('col-approval'), done: document.getElementById('col-done') };
-      Object.values(cols).forEach(c => c.innerHTML = '');
+      Object.values(cols).forEach(c => { if (c) c.innerHTML = ''; });
       let pending = 0;
-      const sampleTasks = [
-        { id: 'T-101', title: '翌週シフト希望集計とコマ割り策定', name: '田中 (店長)', status: 'approval', summary: '昼ピーク3名配置。予算比97.4%' },
-        { id: 'T-102', title: '14:00 レジ交代・釣銭準備金点検', name: '佐藤 (リーダー)', status: 'approval', summary: '点検完了。違算0円。金庫在高一致。' },
-        { id: 'T-103', title: 'ランチピーク前 チキン仕込み', name: 'グエン (厨房)', status: 'progress', summary: 'チキン24個仕込み中。' }
-      ];
-      sampleTasks.forEach(t => {
-        if (t.status === 'approval') pending++;
+
+      tasks.forEach(t => {
         const col = cols[t.status];
         if (!col) return;
+        const needsApproval = t.status === 'approval';
+        if (needsApproval) pending++;
+
         const card = document.createElement('div');
         card.className = 'p-2.5 rounded-xl border text-xs bg-white border-slate-200 shadow-sm';
-        card.innerHTML = `<div class="flex justify-between font-bold text-[10px] text-slate-400"><span>${t.name}</span><span>${t.id}</span></div><div class="font-black text-slate-800 mt-1">${t.title}</div><div class="text-[10px] text-slate-500 mt-0.5">${t.summary}</div>`;
+
+        const head = document.createElement('div');
+        head.className = 'flex justify-between font-bold text-[10px] text-slate-400';
+        head.innerHTML = '<span></span><span></span>';
+        head.children[0].textContent = assigneeLabel(t);
+        head.children[1].textContent = t.id;
+
+        const title = document.createElement('div');
+        title.className = 'font-black text-slate-800 mt-1';
+        title.textContent = t.title || '';
+
+        const summary = document.createElement('div');
+        summary.className = 'text-[10px] text-slate-500 mt-0.5';
+        summary.textContent = t.summary || '';
+
+        card.append(head, title, summary);
+
+        if (t.status === 'done' && t.approved_by) {
+          const sealed = document.createElement('div');
+          sealed.className = 'mt-1.5 text-[10px] font-black text-rose-700 flex items-center gap-1';
+          sealed.textContent = '💮 承認済み / ' + t.approved_by;
+          card.appendChild(sealed);
+        }
+
+        if (needsApproval) {
+          const btn = document.createElement('button');
+          btn.className = 'mt-2 w-full py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-black text-[11px] shadow-sm transition';
+          btn.textContent = '💮 承認する';
+          btn.onclick = () => openApprovalModal(t.id);
+          card.appendChild(btn);
+        }
+
         col.appendChild(card);
       });
+
       document.getElementById('kanbanPendingBadge').innerText = pending;
+    }
+
+    // ================= 代表承認モーダル =================
+    window.openApprovalModal = function(taskId) {
+      const t = findTask(taskId);
+      if (!t) return;
+      playTapSound(620);
+      currentApprovalTaskId = taskId;
+
+      document.getElementById('approvalTaskId').textContent = t.id;
+      document.getElementById('approvalTaskAssignee').textContent = assigneeLabel(t);
+      document.getElementById('approvalTaskTitle').textContent = t.title || '';
+      document.getElementById('approvalTaskSummary').textContent = t.summary || '(サマリーなし)';
+
+      const diffWrap = document.getElementById('approvalDiffWrap');
+      document.getElementById('approvalTaskDiff').textContent = t.diff_preview || '';
+      diffWrap.classList.toggle('hidden', !t.diff_preview);
+
+      const dbWrap = document.getElementById('approvalDbWrap');
+      document.getElementById('approvalTaskDb').textContent = t.db_target || '';
+      dbWrap.classList.toggle('hidden', !t.db_target);
+
+      // スタンプ欄と結果表示をリセット
+      const area = document.getElementById('approvalStampArea');
+      area.innerHTML = '<span class="text-[11px] text-slate-400 font-bold" id="approvalStampHint">承認すると、ここに代表印が押されます</span>';
+      area.className = 'flex items-center justify-center h-28 bg-white rounded-2xl border-2 border-dashed border-rose-300';
+      document.getElementById('approvalResult').className = 'hidden';
+      document.getElementById('approvalActions').classList.remove('hidden');
+
+      document.getElementById('approvalModal').classList.remove('hidden');
+    };
+
+    window.closeApprovalModal = function() {
+      playTapSound(400);
+      currentApprovalTaskId = null;
+      document.getElementById('approvalModal').classList.add('hidden');
+    };
+
+    function showApprovalResult(html, ok) {
+      const el = document.getElementById('approvalResult');
+      el.className = ok
+        ? 'p-3 rounded-2xl font-black text-xs bg-emerald-100 text-emerald-900 border border-emerald-300'
+        : 'p-3 rounded-2xl font-black text-xs bg-rose-100 text-rose-900 border border-rose-300';
+      el.innerHTML = html;
+    }
+
+    /** 承認印を押す。デモ=ローカル更新 / Live=Firestore更新 */
+    window.approveCurrentTask = async function() {
+      const t = findTask(currentApprovalTaskId);
+      if (!t) return;
+      playTapSound(880);
+
+      const approver = isLiveAuthenticated
+        ? (document.getElementById('userName').innerText || '代表')
+        : '湯田 恭平 (デモ)';
+
+      // 朱肉スタンプ演出
+      const area = document.getElementById('approvalStampArea');
+      area.className = 'flex items-center justify-center h-28 bg-white rounded-2xl border-2 border-rose-200 overflow-hidden';
+      area.innerHTML = '';
+      const stamp = document.createElement('div');
+      stamp.className = 'stamp-press w-20 h-20 rounded-full border-4 border-rose-600 text-rose-600 flex flex-col items-center justify-center font-black leading-none shadow-sm';
+      stamp.innerHTML = '<span class="text-2xl">💮</span><span class="text-[10px] mt-0.5">代表承認</span>';
+      area.appendChild(stamp);
+      document.getElementById('approvalActions').classList.add('hidden');
+
+      // 保存先の違いはストアが吸収する。ここでは分岐しない
+      const store = activeStore();
+      if (!store) {
+        showApprovalResult('⚠️ <strong>保存先が用意できていません。</strong><br>ページを再読み込みしてください。', false);
+        document.getElementById('approvalActions').classList.remove('hidden');
+        return;
+      }
+      try {
+        await store.approveTask(t.id, approver);
+      } catch (err) {
+        showApprovalResult('⚠️ <strong>保存に失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
+        document.getElementById('approvalActions').classList.remove('hidden');
+        return;
+      }
+      showApprovalResult(store.kind === 'firebase'
+        ? '✅ <strong>承認を確定しました。</strong><br>' + escapeHtml(t.db_target || 'Firestore') + ' へ保存しました。'
+        : '✅ <strong>承認しました（体験版）。</strong><br>この端末の中だけに保存されます。', true);
+
+      addChat('manager', '【' + t.id + '】' + t.title + ' を代表承認しました。');
+      setTimeout(() => { if (currentApprovalTaskId === t.id) closeApprovalModal(); }, 2200);
+    };
+
+    /** 差し戻し（点検中へ戻す） */
+    window.rejectCurrentTask = async function() {
+      const t = findTask(currentApprovalTaskId);
+      if (!t) return;
+      playTapSound(340);
+
+      const area = document.getElementById('approvalStampArea');
+      area.classList.add('stamp-shake');
+      setTimeout(() => area.classList.remove('stamp-shake'), 320);
+
+      const reason = prompt('差し戻し理由を入力してください（任意）') || '';
+
+      const store = activeStore();
+      if (!store) {
+        showApprovalResult('⚠️ <strong>保存先が用意できていません。</strong><br>ページを再読み込みしてください。', false);
+        return;
+      }
+      try {
+        await store.rejectTask(t.id, reason);
+      } catch (err) {
+        showApprovalResult('⚠️ <strong>差し戻しに失敗しました。</strong><br>' + escapeHtml(String((err && err.code) || err)), false);
+        return;
+      }
+
+      addChat('manager', '【' + t.id + '】を点検中へ差し戻しました。' + (reason ? '理由: ' + reason : ''));
+      closeApprovalModal();
+    };
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    /** 現在有効なストア（保存先）。読み書きは必ずここを通す */
+    function activeStore() {
+      return window.VCV_STORE ? window.VCV_STORE.current : null;
+    }
+
+    /** ストアから届いたタスクを描画用に受け取る */
+    function onTasksChanged(next) {
+      tasks = next;
+      renderKanban();
+    }
+
+    /**
+     * 認証状態に応じて保存先を切り替える。
+     * 代表ログイン中は Firestore、それ以外は端末内保存（体験版）。
+     * Firestore に繋げなかった場合は体験版へ退避し、画面は止めない。
+     */
+    async function switchTaskSource(live) {
+      if (!window.VCV_STORE) { console.error('[vcv] ストレージ層を読み込めていません'); return; }
+      if (live) {
+        try {
+          await window.VCV_STORE.use('firebase', onTasksChanged);
+          await refreshStaff();
+          return;
+        } catch (err) {
+          console.error('[vcv] tasks subscribe failed', err);
+          // 本番に繋がっていないのに「Live同期中」と見せない。
+          // 実際の保存先と表示を必ず一致させる。
+          const badge = document.getElementById('modeBadge');
+          badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
+          badge.innerText = '⚠️ 本番同期エラー（端末内データ表示中）';
+          addChat('manager', 'タスクの本番同期に失敗しました。端末内のデータを表示します。この状態での承認は本番DBに保存されません。');
+        }
+      }
+      await window.VCV_STORE.use('local', onTasksChanged);
+      await refreshStaff();
     }
 
     let chatLogs = [
@@ -896,10 +1609,30 @@
     }
     function addChat(id, text) { chatLogs.push({ sender: id, text }); renderChat(); }
 
+    /**
+     * 「ホーム画面に追加」で使えるようにする。
+     * file:// で直接開いた場合は登録できないので何もしない（エラーも出さない）。
+     */
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .catch((err) => console.warn('[vcv] Service Worker を登録できませんでした', err));
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       updateStoreNamesUI();
-      renderKanban();
+      renderLauncher();
       renderChat();
+      switchTaskSource(false);   // 既定は体験版（端末内保存）。ログイン成功時に切り替わる
+      registerServiceWorker();
+      if (window.VCV_STATUS) {
+        window.VCV_STATUS.onPush((st) => {
+          renderLauncher();
+          const open = document.getElementById('appViewerModal');
+          if (open && !open.classList.contains('hidden')) renderAppStatus(st.app_id);
+        });
+      }
       setInterval(() => {
         document.getElementById('roomWallClock').innerText = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
       }, 1000);

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vcv 実店舗情報セットアップ（代表専用）</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: light; }
+  body { font-family: 'M PLUS Rounded 1c', sans-serif; background: #f1f5f9; margin: 0; padding: 24px 16px; color: #1e293b; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  .card { background: #fff; border: 4px solid #cbd5e1; border-radius: 24px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+  h1 { font-size: 18px; font-weight: 900; margin: 0 0 4px; }
+  p.lead { font-size: 13px; color: #64748b; margin: 0 0 20px; line-height: 1.6; }
+  .note { background: #fef9c3; border: 2px solid #fde047; border-radius: 14px; padding: 12px; font-size: 12px; line-height: 1.7; margin-bottom: 20px; }
+  label { display: block; font-size: 12px; font-weight: 900; margin: 14px 0 4px; }
+  input, textarea { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 13px; font-family: inherit; }
+  input:focus, textarea:focus { outline: none; border-color: #059669; }
+  button { width: 100%; padding: 12px; border: none; border-radius: 14px; font-family: inherit; font-weight: 900; font-size: 14px; cursor: pointer; margin-top: 18px; }
+  .primary { background: #059669; color: #fff; }
+  .primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .ghost { background: #e2e8f0; color: #334155; }
+  #status { margin-top: 16px; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; line-height: 1.6; display: none; }
+  .ok { background: #d1fae5; color: #065f46; border: 2px solid #6ee7b7; }
+  .err { background: #ffe4e6; color: #9f1239; border: 2px solid #fda4af; }
+  fieldset { border: 2px solid #e2e8f0; border-radius: 16px; padding: 12px 16px 18px; margin: 18px 0 0; }
+  legend { font-size: 12px; font-weight: 900; padding: 0 6px; color: #059669; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>🔐 vcv 実店舗情報セットアップ</h1>
+    <p class="lead">実店舗名・周辺情報を Firestore（<code>config/stores</code>）へ登録します。代表アカウントのみ実行できます。</p>
+
+    <div class="note">
+      <strong>なぜこのページが必要か</strong><br>
+      実店舗名をリポジトリのコードに書くと GitHub Pages 経由で全世界に公開されてしまいます。
+      そのため実店舗情報はコードに置かず、代表のみ読める Firestore に保存します。
+      このページ自体にも実データは含まれていません（入力は毎回あなたの手元から送信されます）。
+    </div>
+
+    <button id="loginBtn" class="primary">Googleで代表ログイン</button>
+    <button id="logoutBtn" class="ghost" style="display:none">ログアウト</button>
+
+    <form id="form" style="display:none">
+      <fieldset>
+        <legend>ブランド表記</legend>
+        <label for="brandTitle">ヘッダー見出し</label>
+        <input id="brandTitle" placeholder="例: 株式会社ゆだや 店舗統合ルーム" required>
+        <label for="brandSub">サブタイトル</label>
+        <input id="brandSub" placeholder="例: 自律AIオペレーション＆店舗DXハブ" required>
+      </fieldset>
+
+      <fieldset>
+        <legend>店舗 1（旗艦店）</legend>
+        <label for="store1">店舗名</label>
+        <input id="store1" required>
+        <label for="desc1">店舗説明・周辺情報</label>
+        <textarea id="desc1" rows="2" required></textarea>
+      </fieldset>
+
+      <fieldset>
+        <legend>店舗 2</legend>
+        <label for="store2">店舗名</label>
+        <input id="store2" required>
+        <label for="desc2">店舗説明・周辺情報</label>
+        <textarea id="desc2" rows="2" required></textarea>
+      </fieldset>
+
+      <fieldset>
+        <legend>街並みビュー</legend>
+        <label for="road">通り名ラベル</label>
+        <input id="road" placeholder="例: 🛣️ ○○通り（△△ ⇄ □□ 方面）" required>
+      </fieldset>
+
+      <button type="submit" class="primary" id="saveBtn">Firestore に保存する</button>
+    </form>
+
+    <div id="status"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { firebaseConfig, isFirebaseConfigured } from '../src/firebase-config.js';
+
+  const SDK = 'https://www.gstatic.com/firebasejs/10.8.0';
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('form');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const FIELDS = ['brandTitle', 'brandSub', 'store1', 'desc1', 'store2', 'desc2', 'road'];
+
+  function say(msg, kind) {
+    statusEl.className = kind;
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = msg;
+  }
+
+  if (!isFirebaseConfigured()) {
+    loginBtn.disabled = true;
+    say('⚠️ <strong>Firebase 未設定です。</strong><br>先に <code>scripts/yudaya-setup.ps1</code> を実行して apiKey / appId を設定してください。', 'err');
+    throw new Error('firebase not configured');
+  }
+
+  const [appMod, authMod, storeMod] = await Promise.all([
+    import(`${SDK}/firebase-app.js`),
+    import(`${SDK}/firebase-auth.js`),
+    import(`${SDK}/firebase-firestore.js`)
+  ]);
+
+  const app = appMod.initializeApp(firebaseConfig);
+  const auth = authMod.getAuth(app);
+  const db = storeMod.getFirestore(app);
+  const ref = storeMod.doc(db, 'config', 'stores');
+
+  loginBtn.onclick = async () => {
+    try {
+      await authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider());
+    } catch (err) {
+      say('ログインに失敗しました: ' + (err.code || err.message), 'err');
+    }
+  };
+  logoutBtn.onclick = () => authMod.signOut(auth);
+
+  authMod.onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      loginBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+      form.style.display = 'none';
+      statusEl.style.display = 'none';
+      return;
+    }
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'block';
+
+    // 読み取れる＝代表。permission-denied＝権限なし。
+    try {
+      const snap = await storeMod.getDoc(ref);
+      form.style.display = 'block';
+      if (snap.exists()) {
+        const d = snap.data();
+        FIELDS.forEach((k) => { if (d[k]) document.getElementById(k).value = d[k]; });
+        say('✅ 既存の設定を読み込みました（' + (user.email || '') + '）。編集して保存できます。', 'ok');
+      } else {
+        say('ℹ️ 設定はまだ未登録です（' + (user.email || '') + '）。各項目を入力して保存してください。', 'ok');
+      }
+    } catch (err) {
+      form.style.display = 'none';
+      if (err.code === 'permission-denied') {
+        say('⛔ <strong>このアカウントには権限がありません。</strong><br>firestore.rules の OWNER_UID が、いまログインしたアカウントのUIDと一致しているか確認してください。', 'err');
+      } else {
+        say('読み取りエラー: ' + (err.code || err.message), 'err');
+      }
+    }
+  });
+
+  form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    const payload = { updated_at: new Date().toISOString() };
+    FIELDS.forEach((k) => { payload[k] = document.getElementById(k).value.trim(); });
+    try {
+      await storeMod.setDoc(ref, payload);
+      say('🎉 <strong>保存しました。</strong><br>vcv 本体を開いて「代表ログイン」すると、実店舗名で表示されます。', 'ok');
+    } catch (err) {
+      say('保存に失敗しました: ' + (err.code || err.message), 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>
